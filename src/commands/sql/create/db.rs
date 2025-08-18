@@ -4,7 +4,7 @@ use std::error::Error;
 use serenity::prelude::Context;
 use serenity::model::id::GuildId;
 use serenity::model::channel::ChannelType;
-use crate::logging::log_info;
+use crate::logging::{log_info, log_error};
 use crate::utils::{sanitize_channel_name, create_success_embed, create_error_embed};
 
 pub fn register() -> Result<(), Box<dyn Error>> {
@@ -48,7 +48,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
                 "❌ Database Creation Failed",
                 "Failed to create database. Please check bot permissions or try again."
             );
-            log_info("ERROR: Failed to create database");
+            log_error("Failed to create database");
             Err(embed)
         }
     }

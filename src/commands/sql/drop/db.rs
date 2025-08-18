@@ -4,7 +4,7 @@ use std::error::Error;
 use serenity::prelude::Context;
 use serenity::model::id::GuildId;
 use serenity::model::channel::ChannelType;
-use crate::logging::log_info;
+use crate::logging::{log_info, log_error};
 use crate::utils::{sanitize_channel_name, create_success_embed, create_error_embed, create_warning_embed};
 
 pub fn register() -> Result<(), Box<dyn Error>> {
@@ -57,6 +57,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
                                 "❌ Database Deletion Failed",
                                 "Failed to delete database. Please check bot permissions or try again."
                             );
+                            log_error(&format!("{}", e));
                             Err(embed)
                         }
                     }

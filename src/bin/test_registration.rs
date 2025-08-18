@@ -1,5 +1,5 @@
 use std::error::Error;
-use sqlcord::logging::log_info;
+use sqlcord::logging::{log_error, log_info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             log_info("All commands are ready and registered.");
         }
         Err(e) => {
-            log_info(&format!("Dynamic command registration test failed: {}", e));
+            log_error(&format!("Dynamic command registration test failed: {}", e));
             return Err(e);
         }
     }

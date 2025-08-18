@@ -6,7 +6,7 @@ use serenity::model::id::{GuildId, UserId};
 use serenity::model::channel::ChannelType;
 use serenity::builder::CreateEmbed;
 use crate::state::CurrentDB;
-use crate::logging::log_info;
+use crate::logging::{log_info, log_error};
 use crate::utils::{sanitize_channel_name, create_success_embed, create_error_embed};
 
 pub fn register() -> Result<(), Box<dyn Error>> {
@@ -67,7 +67,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                         Err(e) => {
                             tracing::error!("Failed to delete table channel: {e}");
                             let error_msg = "Failed to delete table. Check bot permissions.";
-                            log_info(&format!("ERROR: {}", error_msg));
+                            log_error(&format!("{}", error_msg));
                             Err(create_error_embed("Delete Failed", error_msg))
                         }
                     }

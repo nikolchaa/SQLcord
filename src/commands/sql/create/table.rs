@@ -5,7 +5,7 @@ use serenity::prelude::Context;
 use serenity::model::id::{GuildId, UserId};
 use serenity::model::channel::ChannelType;
 use crate::state::CurrentDB;
-use crate::logging::log_info;
+use crate::logging::{log_info, log_error};
 use crate::utils::{sanitize_channel_name, create_success_embed, create_error_embed};
 
 pub fn register() -> Result<(), Box<dyn Error>> {
@@ -92,7 +92,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                             "❌ Table Creation Failed",
                             "Failed to create table. Please check bot permissions or try again."
                         );
-                        log_info("ERROR: Failed to create table");
+                        log_error("Failed to create table");
                         Err(embed)
                     }
                 }

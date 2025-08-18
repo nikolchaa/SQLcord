@@ -12,7 +12,7 @@ pub mod explain;
 use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::model::application::CommandOptionType;
 use std::error::Error;
-use crate::logging::log_info;
+use crate::logging::{log_info, log_error};
 
 /// Register all SQL commands dynamically
 pub fn register_all_sql_commands() -> Result<(), Box<dyn Error>> {
@@ -20,12 +20,12 @@ pub fn register_all_sql_commands() -> Result<(), Box<dyn Error>> {
     
     // Register subcommand groups
     if let Err(e) = create::register_create_subcommands() {
-        log_info(&format!("Failed to register CREATE subcommands: {}", e));
+        log_error(&format!("Failed to register CREATE subcommands: {}", e));
         return Err(e);
     }
     
     if let Err(e) = drop::register_drop_subcommands() {
-        log_info(&format!("Failed to register DROP subcommands: {}", e));
+        log_error(&format!("Failed to register DROP subcommands: {}", e));
         return Err(e);
     }
     
@@ -33,32 +33,32 @@ pub fn register_all_sql_commands() -> Result<(), Box<dyn Error>> {
     log_info("Registering individual SQL commands...");
     
     if let Err(e) = use_::register() {
-        log_info(&format!("Failed to register USE command: {}", e));
+        log_error(&format!("Failed to register USE command: {}", e));
         return Err(e);
     }
     
     if let Err(e) = select::register() {
-        log_info(&format!("Failed to register SELECT command: {}", e));
+        log_error(&format!("Failed to register SELECT command: {}", e));
         return Err(e);
     }
     
     if let Err(e) = insert::register() {
-        log_info(&format!("Failed to register INSERT command: {}", e));
+        log_error(&format!("Failed to register INSERT command: {}", e));
         return Err(e);
     }
     
     if let Err(e) = update::register() {
-        log_info(&format!("Failed to register UPDATE command: {}", e));
+        log_error(&format!("Failed to register UPDATE command: {}", e));
         return Err(e);
     }
     
     if let Err(e) = delete::register() {
-        log_info(&format!("Failed to register DELETE command: {}", e));
+        log_error(&format!("Failed to register DELETE command: {}", e));
         return Err(e);
     }
     
     if let Err(e) = explain::register() {
-        log_info(&format!("Failed to register EXPLAIN command: {}", e));
+        log_error(&format!("Failed to register EXPLAIN command: {}", e));
         return Err(e);
     }
     

@@ -6,7 +6,7 @@ use serenity::Client;
 use serenity::model::gateway::GatewayIntents;
 use crate::state::CurrentDB;
 use crate::handler::Handler;
-use crate::logging::log_info;
+use crate::logging::{log_info, log_error};
 
 pub async fn create_client_from_env() -> Result<Client, Box<dyn std::error::Error>> {
     let token = env::var("DISCORD_TOKEN")?;
@@ -38,7 +38,7 @@ pub async fn register_commands(http: &serenity::http::Http) -> Result<(), Box<dy
     
     // Register all SQL commands
     if let Err(e) = crate::commands::sql::register_all_sql_commands() {
-        log_info(&format!("ERROR: Failed to register SQL commands: {}", e));
+        log_error(&format!("Failed to register SQL commands: {}", e));
         return Err(e);
     }
 

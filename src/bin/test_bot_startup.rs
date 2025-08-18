@@ -1,5 +1,5 @@
 use std::error::Error;
-use sqlcord::logging::log_info;
+use sqlcord::logging::{log_error, log_info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     
     // Register all SQL commands (this is the function called in register_commands)
     if let Err(e) = sqlcord::commands::sql::register_all_sql_commands() {
-        log_info(&format!("Failed to register SQL commands: {}", e));
+        log_error(&format!("Failed to register SQL commands: {}", e));
         return Err(e);
     }
     
