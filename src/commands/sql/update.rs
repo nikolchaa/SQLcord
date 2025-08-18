@@ -1,0 +1,11 @@
+// /sql update <table> <where> <set>
+
+use std::error::Error;
+
+pub fn register() -> Result<(), Box<dyn Error>> {
+	Ok(())
+}
+
+pub async fn run() -> Result<(), Box<dyn Error>> {
+	Ok(())
+}
