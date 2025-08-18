@@ -51,8 +51,32 @@ pub async fn register_commands(http: &serenity::http::Http) -> Result<(), Box<dy
     // Build command(s) centrally from src/commands
     let builders: Vec<CreateCommand> = crate::commands::register_all();
 
+    // Optional fast-path: register to a single guild for development to get immediate updates.
+    // Set DEV_GUILD_ID environment variable to a guild value (as integer) to enable.
+    if let Ok(guild_str) = std::env::var("DEV_GUILD_ID") {
+        match guild_str.parse::<u64>() {
+            Ok(gid) => {
+                tracing::info!("Registering {} commands to guild {} (DEV_GUILD_ID)", builders.len(), gid);
+                // The Http client exposes create_guild_commands to register multiple commands for a guild.
+                let clone_builders = builders.clone();
+                let guild_id = serenity::model::id::GuildId::from(gid);
+                match http.create_guild_commands(guild_id, &clone_builders).await {
+                    Ok(cmds) => tracing::info!("Created {} guild commands", cmds.len()),
+                    Err(e) => tracing::error!("Failed to create guild commands: {e}")
+                }
+                return Ok(());
+            }
+            Err(_) => tracing::warn!("DEV_GUILD_ID is set but couldn't parse as u64: {}", guild_str),
+        }
+    }
+
+    // Default: create global commands. Note that global commands can take up to an hour to propagate.
+    tracing::info!("Registering {} global commands (this can be slow to propagate)", builders.len());
     for builder in builders {
-        serenity::model::application::Command::create_global_command(http, builder).await?;
+        match serenity::model::application::Command::create_global_command(http, builder).await {
+            Ok(cmd) => tracing::info!("Created global command: {} (id={})", cmd.name, cmd.id),
+            Err(e) => tracing::error!("Failed to create global command: {e}")
+        }
     }
 
     // Ensure application info is fetched (some serenity versions require this to populate app id)

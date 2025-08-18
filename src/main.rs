@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 mod handler;
 mod bot;
 mod commands;

@@ -25,6 +25,16 @@ pub fn register_sql_group() -> CreateCommand {
                         .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "name", "Table name").required(true))
                 ])
         )
+        // drop group: /sql drop db <name>
+        .add_option(
+            CreateCommandOption::new(CommandOptionType::SubCommandGroup, "drop", "Drop resources")
+                .set_sub_options(vec![
+                    CreateCommandOption::new(CommandOptionType::SubCommand, "db", "Drop a database (category)")
+                        .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "name", "Database name").required(true)),
+                    CreateCommandOption::new(CommandOptionType::SubCommand, "table", "Drop a table (channel)")
+                        .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "name", "Table name").required(true))
+                ])
+        )
         // use subcommand: /sql use <name>
         .add_option(
             CreateCommandOption::new(CommandOptionType::SubCommand, "use", "Select database to use")
