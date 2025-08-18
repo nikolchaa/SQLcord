@@ -1,7 +1,23 @@
 [package]
-name = "SQLcord"
+name = "sqlcord"
 version = "0.1.0"
 edition = "2024"
+
+[[bin]]
+name = "sqlcord"
+path = "src/main.rs"
+
+[[bin]]
+name = "test_registration"
+path = "src/bin/test_registration.rs"
+
+[[bin]]
+name = "test_run_functions"
+path = "src/bin/test_run_functions.rs"
+
+[[bin]]
+name = "test_bot_startup"
+path = "src/bin/test_bot_startup.rs"
 
 [dependencies]
 
@@ -11,3 +27,4 @@ dotenvy = "0.15.7"
 tracing-subscriber = "0.3.19"
 tracing = "0.1.41"
 anyhow = "1.0"
+chrono = "0.4"

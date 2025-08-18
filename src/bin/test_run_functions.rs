@@ -1,0 +1,60 @@
+use std::error::Error;
+use sqlcord::logging::log_info;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    log_info("Testing SQLcord Run Functions");
+
+    // Test CREATE TABLE run function
+    log_info("Testing CREATE TABLE command");
+    match sqlcord::commands::sql::create::table::run("users").await {
+        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
+        Err(e) => log_info(&format!("ERROR: {}", e)),
+    }
+    
+    // Test SELECT run function
+    log_info("Testing SELECT command");
+    match sqlcord::commands::sql::select::run("users").await {
+        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
+        Err(e) => log_info(&format!("ERROR: {}", e)),
+    }
+    
+    // Test INSERT run function
+    log_info("Testing INSERT command");
+    match sqlcord::commands::sql::insert::run("users", r#"{"name": "John", "age": 30}"#).await {
+        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
+        Err(e) => log_info(&format!("ERROR: {}", e)),
+    }
+    
+    // Test UPDATE run function
+    log_info("Testing UPDATE command");
+    match sqlcord::commands::sql::update::run("users").await {
+        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
+        Err(e) => log_info(&format!("ERROR: {}", e)),
+    }
+    
+    // Test DELETE run function
+    log_info("Testing DELETE command");
+    match sqlcord::commands::sql::delete::run("users").await {
+        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
+        Err(e) => log_info(&format!("ERROR: {}", e)),
+    }
+    
+    // Test EXPLAIN run function
+    log_info("Testing EXPLAIN command");
+    match sqlcord::commands::sql::explain::run("SELECT * FROM users").await {
+        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
+        Err(e) => log_info(&format!("ERROR: {}", e)),
+    }
+    
+    // Test DROP TABLE run function
+    log_info("Testing DROP TABLE command");
+    match sqlcord::commands::sql::drop::table::run("users").await {
+        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
+        Err(e) => log_info(&format!("ERROR: {}", e)),
+    }
+    
+    log_info("All run function tests completed!");
+    
+    Ok(())
+}

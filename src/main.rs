@@ -2,6 +2,11 @@ mod handler;
 mod bot;
 mod commands;
 mod state;
+mod guards;
+mod render;
+mod services;
+mod utils;
+mod logging;
 
 use dotenvy::dotenv;
 
