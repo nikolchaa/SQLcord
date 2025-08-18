@@ -7,6 +7,7 @@ mod render;
 mod services;
 mod utils;
 mod logging;
+mod sql_parser;
 
 use dotenvy::dotenv;
 

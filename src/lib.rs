@@ -7,3 +7,4 @@ pub mod render;
 pub mod services;
 pub mod logging;
 pub mod utils;
+pub mod sql_parser;

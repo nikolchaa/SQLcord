@@ -22,7 +22,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, db_name: &st
     
     if sanitized_name.is_empty() {
         let embed = create_error_embed(
-            "❌ Invalid Database Name",
+            "✖️ Invalid Database Name",
             "Database name cannot be empty after sanitization. Please provide a valid name."
         );
         return Err(embed);
@@ -37,7 +37,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, db_name: &st
             
             if !db_exists {
                 let embed = create_error_embed(
-                    "❌ Database Not Found",
+                    "✖️ Database Not Found",
                     &format!("Database **{}** was not found. Create it first with `/sql create db {}`", db_category_name, sanitized_name)
                 );
                 return Err(embed);
@@ -46,7 +46,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, db_name: &st
         Err(e) => {
             tracing::error!("Failed to get channels: {e}");
             let embed = create_error_embed(
-                "❌ Permission Error",
+                "✖️ Permission Error",
                 "Failed to list channels. Please check bot permissions."
             );
             return Err(embed);
@@ -63,11 +63,11 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, db_name: &st
         if was_changed {
             description.push_str(&format!("\n\n*Name sanitized from `{}` to `{}`*", db_name, sanitized_name));
         }
-        let embed = create_success_embed("✅ Database Selected", &description);
+        let embed = create_success_embed("✔️ Database Selected", &description);
         Ok(embed)
     } else {
         let embed = create_error_embed(
-            "❌ Internal Error",
+            "✖️ Internal Error",
             "Data map missing. Please try again or contact support."
         );
         Err(embed)

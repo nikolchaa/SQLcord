@@ -77,6 +77,7 @@ pub fn register_sql_group() -> CreateCommand {
                         .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "name", "Database name").required(true)),
                     CreateCommandOption::new(CommandOptionType::SubCommand, "table", "Create a table (channel)")
                         .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "name", "Table name").required(true))
+                        .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "schema", "Table schema (e.g., 'id int, name varchar(255)')").required(false))
                 ])
         )
         // drop group: /sql drop db <name>

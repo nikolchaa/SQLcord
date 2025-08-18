@@ -22,7 +22,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
     
     if sanitized_name.is_empty() {
         let embed = create_error_embed(
-            "❌ Invalid Database Name",
+            "✖️ Invalid Database Name",
             "Database name cannot be empty after sanitization. Please provide a valid name with alphanumeric characters."
         );
         return Err(embed);
@@ -38,14 +38,14 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
                 description.push_str(&format!("\n\n*Name sanitized from `{}` to `{}`*", db_name, sanitized_name));
             }
             
-            let embed = create_success_embed("✅ Database Created", &description);
+            let embed = create_success_embed("✔️ Database Created", &description);
             log_info(&format!("SUCCESS: Database {} created", channel_name));
             Ok(embed)
         },
         Err(e) => {
             tracing::error!("Failed to create category: {e}");
             let embed = create_error_embed(
-                "❌ Database Creation Failed",
+                "✖️ Database Creation Failed",
                 "Failed to create database. Please check bot permissions or try again."
             );
             log_error("Failed to create database");

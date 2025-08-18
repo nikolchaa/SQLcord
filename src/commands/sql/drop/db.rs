@@ -22,7 +22,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
     
     if sanitized_name.is_empty() {
         let embed = create_error_embed(
-            "❌ Invalid Database Name",
+            "✖️ Invalid Database Name",
             "Database name cannot be empty after sanitization. Please provide a valid name."
         );
         return Err(embed);
@@ -48,13 +48,13 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
                             if was_changed {
                                 description.push_str(&format!("\n\n*Name sanitized from `{}` to `{}`*", db_name, sanitized_name));
                             }
-                            let embed = create_success_embed("✅ Database Deleted", &description);
+                            let embed = create_success_embed("✔️ Database Deleted", &description);
                             Ok(embed)
                         },
                         Err(e) => {
                             tracing::error!("Failed to delete category: {e}");
                             let embed = create_error_embed(
-                                "❌ Database Deletion Failed",
+                                "✖️ Database Deletion Failed",
                                 "Failed to delete database. Please check bot permissions or try again."
                             );
                             log_error(&format!("{}", e));
@@ -64,7 +64,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
                 }
             } else {
                 let embed = create_error_embed(
-                    "❌ Database Not Found",
+                    "✖️ Database Not Found",
                     &format!("Database **{}** was not found in this server.", target)
                 );
                 Err(embed)
@@ -73,7 +73,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<sere
         Err(e) => {
             tracing::error!("Failed to get channels: {e}");
             let embed = create_error_embed(
-                "❌ Permission Error",
+                "✖️ Permission Error",
                 "Failed to list channels. Please check bot permissions."
             );
             Err(embed)

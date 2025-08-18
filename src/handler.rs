@@ -63,9 +63,18 @@ impl EventHandler for Handler {
                                                 if let CommandDataOptionValue::SubCommand(params) = &sub.value {
                                                     if let Some(name_opt) = params.get(0) {
                                                         if let CommandDataOptionValue::String(table_name) = &name_opt.value {
+                                                            // Extract optional schema parameter
+                                                            let schema = params.get(1).and_then(|opt| {
+                                                                if let CommandDataOptionValue::String(schema_str) = &opt.value {
+                                                                    Some(schema_str.as_str())
+                                                                } else {
+                                                                    None
+                                                                }
+                                                            });
+                                                            
                                                             if let Some(guild_id) = command.guild_id {
                                                                 let user_id = command.user.id;
-                                                                match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name).await {
+                                                                match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name, schema).await {
                                                                     Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
                                                                             CreateInteractionResponseMessage::new().embed(embed)
@@ -126,9 +135,18 @@ impl EventHandler for Handler {
                                                 if let CommandDataOptionValue::SubCommand(inner) = &sub.value {
                                                     if let Some(name_opt) = inner.get(0) {
                                                         if let CommandDataOptionValue::String(table_name) = &name_opt.value {
+                                                            // Extract optional schema parameter
+                                                            let schema = inner.get(1).and_then(|opt| {
+                                                                if let CommandDataOptionValue::String(schema_str) = &opt.value {
+                                                                    Some(schema_str.as_str())
+                                                                } else {
+                                                                    None
+                                                                }
+                                                            });
+                                                            
                                                             if let Some(guild_id) = command.guild_id {
                                                                 let user_id = command.user.id;
-                                                                match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name).await {
+                                                                match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name, schema).await {
                                                                     Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
                                                                             CreateInteractionResponseMessage::new().embed(embed)

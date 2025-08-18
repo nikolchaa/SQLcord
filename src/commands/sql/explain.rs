@@ -42,8 +42,16 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
             • Requires active database selection (`USE <db>`)\n\
             • Creates text channel with name format: `table_<table_name>`\n\
             • Places channel inside the current database category\n\
+            • Optionally accepts SQL-like column definitions\n\
+            • Stores schema information in channel topic\n\
             • Prevents duplicate table creation\n\n\
-            **Example**: In `db_sales`, `CREATE TABLE customers` → Channel: `table_customers`"
+            **Examples**:\n\
+            • Basic: `CREATE TABLE customers`\n\
+            • With schema: `CREATE TABLE Persons (PersonID int, LastName varchar(255), FirstName varchar(255), Address varchar(255), City varchar(255))`\n\n\
+            **Supported Data Types**: INT, VARCHAR, CHAR, BOOLEAN, FLOAT, DOUBLE, DECIMAL, DATE, TIME, DATETIME\n\
+            Only these types are accepted. Any other type will result in an error.\n\n\
+            **Default Sizes**: VARCHAR defaults to 255, CHAR defaults to 1 if no size specified.\n\n\
+            **Result**: In `db_sales`, creates channel `table_customers` with schema stored in topic"
         ),
         "drop table" | "drop_table" => (
             "🗑️ DROP TABLE",
@@ -91,7 +99,7 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
             **Status**: Not yet implemented"
         ),
         "delete" => (
-            "❌ DELETE (Future)",
+            "✖️ DELETE (Future)",
             "**Discord Mapping**: Will remove data from table channels\n\n\
             **Planned Process**:\n\
             • Remove specific records from tables\n\
