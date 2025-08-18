@@ -5,7 +5,7 @@ use serenity::prelude::Context;
 use serenity::model::id::GuildId;
 use serenity::model::channel::ChannelType;
 use crate::logging::log_info;
-use crate::utils::sanitize_channel_name;
+use crate::utils::{sanitize_channel_name, create_success_embed, create_error_embed, create_warning_embed};
 
 pub fn register() -> Result<(), Box<dyn Error>> {
     log_info("Registering DROP DB command");
@@ -13,15 +13,19 @@ pub fn register() -> Result<(), Box<dyn Error>> {
 }
 
 /// Attempt to drop the category named `db_<db_name>` in the guild.
-/// Returns Ok(success_message) or Err(error_message).
-pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<String, String> {
+/// Returns Ok(embed) or Err(embed).
+pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<serenity::builder::CreateEmbed, serenity::builder::CreateEmbed> {
     log_info(&format!("DROP DB command executed for database: {}", db_name));
     
     // Sanitize the database name
     let (sanitized_name, was_changed) = sanitize_channel_name(db_name);
     
     if sanitized_name.is_empty() {
-        return Err("Database name cannot be empty after sanitization.".to_string());
+        let embed = create_error_embed(
+            "❌ Invalid Database Name",
+            "Database name cannot be empty after sanitization. Please provide a valid name."
+        );
+        return Err(embed);
     }
     
     match guild_id.channels(&ctx.http).await {
@@ -32,29 +36,46 @@ pub async fn run(ctx: &Context, guild_id: GuildId, db_name: &str) -> Result<Stri
                 // ensure category has no child channels
                 let child_count = chans.values().filter(|c| c.parent_id == Some(cat.id)).count();
                 if child_count > 0 {
-                    Err(format!("Refusing to drop `{}`: category is not empty ({} channels). Remove tables first.", target, child_count))
+                    let embed = create_warning_embed(
+                        "⚠️ Cannot Drop Database",
+                        &format!("Refusing to drop **{}**: category is not empty ({} tables). Remove all tables first.", target, child_count)
+                    );
+                    Err(embed)
                 } else {
                     match cat.id.delete(&ctx.http).await {
                         Ok(_) => {
-                            let mut success_msg = format!("Database `{}` deleted", target);
+                            let mut description = format!("Database **{}** has been deleted successfully!", target);
                             if was_changed {
-                                success_msg.push_str(&format!(" (name sanitized from `{}` to `{}`)", db_name, sanitized_name));
+                                description.push_str(&format!("\n\n*Name sanitized from `{}` to `{}`*", db_name, sanitized_name));
                             }
-                            Ok(success_msg)
+                            let embed = create_success_embed("✅ Database Deleted", &description);
+                            Ok(embed)
                         },
                         Err(e) => {
                             tracing::error!("Failed to delete category: {e}");
-                            Err("Failed to delete database. Check bot permissions.".to_string())
+                            let embed = create_error_embed(
+                                "❌ Database Deletion Failed",
+                                "Failed to delete database. Please check bot permissions or try again."
+                            );
+                            Err(embed)
                         }
                     }
                 }
             } else {
-                Err(format!("Database `{}` not found", target))
+                let embed = create_error_embed(
+                    "❌ Database Not Found",
+                    &format!("Database **{}** was not found in this server.", target)
+                );
+                Err(embed)
             }
         },
         Err(e) => {
             tracing::error!("Failed to get channels: {e}");
-            Err("Failed to list channels. Check bot permissions.".to_string())
+            let embed = create_error_embed(
+                "❌ Permission Error",
+                "Failed to list channels. Please check bot permissions."
+            );
+            Err(embed)
         }
     }
 }

@@ -1,5 +1,8 @@
 // Small helpers
 
+use serenity::builder::CreateEmbed;
+use serenity::model::Color;
+
 /// Sanitize a name for Discord channel usage.
 /// Converts to lowercase, replaces spaces with underscores, removes invalid characters.
 /// Returns (sanitized_name, was_changed)
@@ -25,6 +28,42 @@ pub fn sanitize_channel_name(s: &str) -> (String, bool) {
     
     let was_changed = original != sanitized;
     (sanitized, was_changed)
+}
+
+/// Create a success embed (green color)
+pub fn create_success_embed(title: &str, description: &str) -> CreateEmbed {
+    CreateEmbed::new()
+        .title(title)
+        .description(description)
+        .color(Color::from_rgb(46, 204, 113)) // Green
+        .timestamp(serenity::model::Timestamp::now())
+}
+
+/// Create a warning embed (yellow/orange color)
+pub fn create_warning_embed(title: &str, description: &str) -> CreateEmbed {
+    CreateEmbed::new()
+        .title(title)
+        .description(description)
+        .color(Color::from_rgb(241, 196, 15)) // Yellow
+        .timestamp(serenity::model::Timestamp::now())
+}
+
+/// Create an error embed (red color)
+pub fn create_error_embed(title: &str, description: &str) -> CreateEmbed {
+    CreateEmbed::new()
+        .title(title)
+        .description(description)
+        .color(Color::from_rgb(231, 76, 60)) // Red
+        .timestamp(serenity::model::Timestamp::now())
+}
+
+/// Create an info embed (blue color)
+pub fn create_info_embed(title: &str, description: &str) -> CreateEmbed {
+    CreateEmbed::new()
+        .title(title)
+        .description(description)
+        .color(Color::from_rgb(52, 152, 219)) // Blue
+        .timestamp(serenity::model::Timestamp::now())
 }
 
 #[cfg(test)]

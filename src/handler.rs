@@ -34,16 +34,16 @@ impl EventHandler for Handler {
                                                                 if let CommandDataOptionValue::String(db_name) = &name_opt.value {
                                                                     if let Some(guild_id) = command.guild_id {
                                                                         match crate::commands::sql::create::db::run(&ctx, guild_id, db_name).await {
-                                                                            Ok(msg) => {
+                                                                            Ok(embed) => {
                                                                                 if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                                    CreateInteractionResponseMessage::new().content(msg)
+                                                                                    CreateInteractionResponseMessage::new().embed(embed)
                                                                                 )).await {
                                                                                     tracing::error!("Failed to respond after creating db: {e}");
                                                                                 }
                                                                             }
-                                                                            Err(err_msg) => {
+                                                                            Err(embed) => {
                                                                                 if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                                    CreateInteractionResponseMessage::new().content(err_msg)
+                                                                                    CreateInteractionResponseMessage::new().embed(embed)
                                                                                 )).await {
                                                                                     tracing::error!("Failed to send error response: {e}");
                                                                                 }
@@ -66,16 +66,16 @@ impl EventHandler for Handler {
                                                             if let Some(guild_id) = command.guild_id {
                                                                 let user_id = command.user.id;
                                                                 match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name).await {
-                                                                    Ok(msg) => {
+                                                                    Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after creating table: {e}");
                                                                         }
                                                                     }
-                                                                    Err(err_msg) => {
+                                                                    Err(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to send error response: {e}");
                                                                         }
@@ -103,16 +103,16 @@ impl EventHandler for Handler {
                                                         if let CommandDataOptionValue::String(db_name) = &name_opt.value {
                                                             if let Some(guild_id) = command.guild_id {
                                                                 match crate::commands::sql::create::db::run(&ctx, guild_id, db_name).await {
-                                                                    Ok(msg) => {
+                                                                    Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after creating db: {e}");
                                                                         }
                                                                     }
-                                                                    Err(err_msg) => {
+                                                                    Err(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to send error response: {e}");
                                                                         }
@@ -129,16 +129,16 @@ impl EventHandler for Handler {
                                                             if let Some(guild_id) = command.guild_id {
                                                                 let user_id = command.user.id;
                                                                 match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name).await {
-                                                                    Ok(msg) => {
+                                                                    Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after creating table: {e}");
                                                                         }
                                                                     }
-                                                                    Err(err_msg) => {
+                                                                    Err(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to send error response: {e}");
                                                                         }
@@ -164,16 +164,16 @@ impl EventHandler for Handler {
                                                         if let CommandDataOptionValue::String(db_name) = &name_opt.value {
                                                             if let Some(guild_id) = command.guild_id {
                                                                 match crate::commands::sql::drop::db::run(&ctx, guild_id, db_name).await {
-                                                                    Ok(msg) => {
+                                                                    Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after dropping db: {e}");
                                                                         }
                                                                     }
-                                                                    Err(err_msg) => {
+                                                                    Err(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to send error response: {e}");
                                                                         }
@@ -196,16 +196,16 @@ impl EventHandler for Handler {
                                                             if let Some(guild_id) = command.guild_id {
                                                                 let user_id = command.user.id;
                                                                 match crate::commands::sql::drop::table::run(&ctx, guild_id, user_id, table_name).await {
-                                                                    Ok(msg) => {
+                                                                    Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after dropping table: {e}");
                                                                         }
                                                                     }
-                                                                    Err(err_msg) => {
+                                                                    Err(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to send error response: {e}");
                                                                         }
@@ -233,16 +233,16 @@ impl EventHandler for Handler {
                                                         if let CommandDataOptionValue::String(db_name) = &name_opt.value {
                                                             if let Some(guild_id) = command.guild_id {
                                                                 match crate::commands::sql::drop::db::run(&ctx, guild_id, db_name).await {
-                                                                    Ok(msg) => {
+                                                                    Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after dropping db: {e}");
                                                                         }
                                                                     }
-                                                                    Err(err_msg) => {
+                                                                    Err(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to send error response: {e}");
                                                                         }
@@ -265,16 +265,16 @@ impl EventHandler for Handler {
                                                             if let Some(guild_id) = command.guild_id {
                                                                 let user_id = command.user.id;
                                                                 match crate::commands::sql::drop::table::run(&ctx, guild_id, user_id, table_name).await {
-                                                                    Ok(msg) => {
+                                                                    Ok(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after dropping table: {e}");
                                                                         }
                                                                     }
-                                                                    Err(err_msg) => {
+                                                                    Err(embed) => {
                                                                         if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                            CreateInteractionResponseMessage::new().embed(embed)
                                                                         )).await {
                                                                             tracing::error!("Failed to send error response: {e}");
                                                                         }
@@ -304,16 +304,16 @@ impl EventHandler for Handler {
                                                 if let Some(guild_id) = command.guild_id {
                                                     let user_id = command.user.id;
                                                     match crate::commands::sql::use_::run(&ctx, guild_id, user_id, db_name).await {
-                                                        Ok(msg) => {
+                                                        Ok(embed) => {
                                                             if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                CreateInteractionResponseMessage::new().content(msg)
+                                                                CreateInteractionResponseMessage::new().embed(embed)
                                                             )).await {
                                                                 tracing::error!("Failed to respond after setting current db: {e}");
                                                             }
                                                         }
-                                                        Err(err_msg) => {
+                                                        Err(embed) => {
                                                             if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                                CreateInteractionResponseMessage::new().content(err_msg)
+                                                                CreateInteractionResponseMessage::new().embed(embed)
                                                             )).await {
                                                                 tracing::error!("Failed to send internal error response: {e}");
                                                             }

@@ -6,7 +6,7 @@ use serenity::model::id::{GuildId, UserId};
 use serenity::model::channel::ChannelType;
 use crate::state::CurrentDB;
 use crate::logging::log_info;
-use crate::utils::sanitize_channel_name;
+use crate::utils::{sanitize_channel_name, create_success_embed, create_error_embed};
 
 pub fn register() -> Result<(), Box<dyn Error>> {
     log_info("Registering CREATE TABLE command");
@@ -14,15 +14,19 @@ pub fn register() -> Result<(), Box<dyn Error>> {
 }
 
 /// Create a text channel named `table_<table_name>` under the current database category.
-/// Returns Ok(success_message) or Err(error_message).
-pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: &str) -> Result<String, String> {
+/// Returns Ok(embed) or Err(embed).
+pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: &str) -> Result<serenity::builder::CreateEmbed, serenity::builder::CreateEmbed> {
     log_info(&format!("CREATE TABLE command executed for table: {}", table_name));
     
     // Sanitize the table name
     let (sanitized_name, was_changed) = sanitize_channel_name(table_name);
     
     if sanitized_name.is_empty() {
-        return Err("Table name cannot be empty after sanitization.".to_string());
+        let embed = create_error_embed(
+            "❌ Invalid Table Name",
+            "Table name cannot be empty after sanitization. Please provide a valid name with alphanumeric characters."
+        );
+        return Err(embed);
     }
     
     // Get the current database for this user
@@ -37,7 +41,13 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
 
     let current_db = match current_db {
         Some(db_name) => db_name,
-        None => return Err("No database selected. Use `/sql use <db_name>` first.".to_string()),
+        None => {
+            let embed = create_error_embed(
+                "❌ No Database Selected",
+                "No database selected. Use `/sql use <db_name>` first to select a database."
+            );
+            return Err(embed);
+        }
     };
 
     // Find the database category
@@ -54,7 +64,11 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                     .find(|c| c.name == table_channel_name && c.parent_id == Some(category.id));
                 
                 if existing_table.is_some() {
-                    return Err(format!("Table `{}` already exists in database `{}`", sanitized_name, current_db));
+                    let embed = create_error_embed(
+                        "❌ Table Already Exists",
+                        &format!("Table **{}** already exists in database **{}**", sanitized_name, current_db)
+                    );
+                    return Err(embed);
                 }
 
                 // Create the table channel
@@ -64,27 +78,39 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                 
                 match guild_id.create_channel(&ctx.http, builder).await {
                     Ok(_) => {
-                        let mut success_msg = format!("Table `{}` created in database `{}`", sanitized_name, current_db);
+                        let mut description = format!("Table **{}** created in database **{}**", sanitized_name, current_db);
                         if was_changed {
-                            success_msg.push_str(&format!(" (name sanitized from `{}` to `{}`)", table_name, sanitized_name));
+                            description.push_str(&format!("\n\n*Name sanitized from `{}` to `{}`*", table_name, sanitized_name));
                         }
-                        log_info(&format!("SUCCESS: {}", success_msg));
-                        Ok(success_msg)
+                        let embed = create_success_embed("✅ Table Created", &description);
+                        log_info(&format!("SUCCESS: Table {} created", table_channel_name));
+                        Ok(embed)
                     },
                     Err(e) => {
                         tracing::error!("Failed to create table channel: {e}");
-                        let error_msg = "Failed to create table. Check bot permissions.".to_string();
-                        log_info(&format!("ERROR: {}", error_msg));
-                        Err(error_msg)
+                        let embed = create_error_embed(
+                            "❌ Table Creation Failed",
+                            "Failed to create table. Please check bot permissions or try again."
+                        );
+                        log_info("ERROR: Failed to create table");
+                        Err(embed)
                     }
                 }
             } else {
-                Err(format!("Database `{}` not found. Create it first with `/sql create db {}`", current_db, current_db))
+                let embed = create_error_embed(
+                    "❌ Database Not Found",
+                    &format!("Database **{}** not found. Create it first with `/sql create db {}`", current_db, current_db)
+                );
+                Err(embed)
             }
         },
         Err(e) => {
             tracing::error!("Failed to get channels: {e}");
-            Err("Failed to list channels. Check bot permissions.".to_string())
+            let embed = create_error_embed(
+                "❌ Permission Error",
+                "Failed to list channels. Please check bot permissions."
+            );
+            Err(embed)
         }
     }
 }

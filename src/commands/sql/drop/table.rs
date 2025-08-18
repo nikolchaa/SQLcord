@@ -4,9 +4,10 @@ use std::error::Error;
 use serenity::prelude::Context;
 use serenity::model::id::{GuildId, UserId};
 use serenity::model::channel::ChannelType;
+use serenity::builder::CreateEmbed;
 use crate::state::CurrentDB;
 use crate::logging::log_info;
-use crate::utils::sanitize_channel_name;
+use crate::utils::{sanitize_channel_name, create_success_embed, create_error_embed};
 
 pub fn register() -> Result<(), Box<dyn Error>> {
     log_info("Registering DROP TABLE command");
@@ -14,15 +15,15 @@ pub fn register() -> Result<(), Box<dyn Error>> {
 }
 
 /// Attempt to drop the table channel named `table_<table_name>` from the current database.
-/// Returns Ok(success_message) or Err(error_message).
-pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: &str) -> Result<String, String> {
+/// Returns Ok(success_embed) or Err(error_embed).
+pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: &str) -> Result<CreateEmbed, CreateEmbed> {
     log_info(&format!("DROP TABLE command executed for table: {}", table_name));
     
     // Sanitize the table name
     let (sanitized_name, was_changed) = sanitize_channel_name(table_name);
     
     if sanitized_name.is_empty() {
-        return Err("Table name cannot be empty after sanitization.".to_string());
+        return Err(create_error_embed("Invalid Table Name", "Table name cannot be empty after sanitization."));
     }
     
     // Get the current database for this user
@@ -37,7 +38,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
 
     let current_db = match current_db {
         Some(db_name) => db_name,
-        None => return Err("No database selected. Use `/sql use <db_name>` first.".to_string()),
+        None => return Err(create_error_embed("No Database Selected", "No database selected. Use `/sql use <db_name>` first.")),
     };
 
     // Find the database category and table channel
@@ -61,25 +62,25 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                                 success_msg.push_str(&format!(" (name sanitized from `{}` to `{}`)", table_name, sanitized_name));
                             }
                             log_info(&format!("SUCCESS: {}", success_msg));
-                            Ok(success_msg)
+                            Ok(create_success_embed("Table Deleted", &success_msg))
                         },
                         Err(e) => {
                             tracing::error!("Failed to delete table channel: {e}");
-                            let error_msg = "Failed to delete table. Check bot permissions.".to_string();
+                            let error_msg = "Failed to delete table. Check bot permissions.";
                             log_info(&format!("ERROR: {}", error_msg));
-                            Err(error_msg)
+                            Err(create_error_embed("Delete Failed", error_msg))
                         }
                     }
                 } else {
-                    Err(format!("Table `{}` not found in database `{}`", sanitized_name, current_db))
+                    Err(create_error_embed("Table Not Found", &format!("Table `{}` not found in database `{}`", sanitized_name, current_db)))
                 }
             } else {
-                Err(format!("Database `{}` not found. Use `/sql use <db_name>` to select a database first.", current_db))
+                Err(create_error_embed("Database Not Found", &format!("Database `{}` not found. Use `/sql use <db_name>` to select a database first.", current_db)))
             }
         },
         Err(e) => {
             tracing::error!("Failed to get channels: {e}");
-            Err("Failed to list channels. Check bot permissions.".to_string())
+            Err(create_error_embed("Permission Error", "Failed to list channels. Check bot permissions."))
         }
     }
 }
