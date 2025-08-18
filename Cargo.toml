@@ -2,6 +2,11 @@
 name = "sqlcord"
 version = "0.1.0"
 edition = "2024"
+authors = ["Nikola Ranđelović <contact@nikolchaa.com>"]
+description = "🥏 A Discord bot for executing SQL commands in a fun and educational way."
+license = "MIT"
+categories = ["bot", "discord", "sql", "database"]
+license-file = "LICENSE"
 
 [[bin]]
 name = "sqlcord"

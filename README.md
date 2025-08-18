@@ -1,6 +1,6 @@
 # 🥏 SQLcord - SQL prompts inside Discord (Rust)
 
-Play around with SQL inside Discord. This project maps:
+A Discord bot for executing SQL commands in a fun and educational way. This project maps:
 
 - Databases -> Discord categories (named `db_<name>`)
 - Tables -> Channels inside the category
