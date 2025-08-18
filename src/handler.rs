@@ -59,6 +59,38 @@ impl EventHandler for Handler {
                                                                 }
                                                             }
                                                 }
+                                            } else if sub.name == "table" {
+                                                if let CommandDataOptionValue::SubCommand(params) = &sub.value {
+                                                    if let Some(name_opt) = params.get(0) {
+                                                        if let CommandDataOptionValue::String(table_name) = &name_opt.value {
+                                                            if let Some(guild_id) = command.guild_id {
+                                                                let user_id = command.user.id;
+                                                                match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name).await {
+                                                                    Ok(msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to respond after creating table: {e}");
+                                                                        }
+                                                                    }
+                                                                    Err(err_msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to send error response: {e}");
+                                                                        }
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                    CreateInteractionResponseMessage::new().content("This command must be used in a server (guild).")
+                                                                )).await {
+                                                                    tracing::error!("Failed to send guild-only response: {e}");
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -76,6 +108,32 @@ impl EventHandler for Handler {
                                                                             CreateInteractionResponseMessage::new().content(msg)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after creating db: {e}");
+                                                                        }
+                                                                    }
+                                                                    Err(err_msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to send error response: {e}");
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } else if sub.name == "table" {
+                                                if let CommandDataOptionValue::SubCommand(inner) = &sub.value {
+                                                    if let Some(name_opt) = inner.get(0) {
+                                                        if let CommandDataOptionValue::String(table_name) = &name_opt.value {
+                                                            if let Some(guild_id) = command.guild_id {
+                                                                let user_id = command.user.id;
+                                                                match crate::commands::sql::create::table::run(&ctx, guild_id, user_id, table_name).await {
+                                                                    Ok(msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to respond after creating table: {e}");
                                                                         }
                                                                     }
                                                                     Err(err_msg) => {
@@ -131,6 +189,38 @@ impl EventHandler for Handler {
                                                         }
                                                     }
                                                 }
+                                            } else if sub.name == "table" {
+                                                if let CommandDataOptionValue::SubCommand(params) = &sub.value {
+                                                    if let Some(name_opt) = params.get(0) {
+                                                        if let CommandDataOptionValue::String(table_name) = &name_opt.value {
+                                                            if let Some(guild_id) = command.guild_id {
+                                                                let user_id = command.user.id;
+                                                                match crate::commands::sql::drop::table::run(&ctx, guild_id, user_id, table_name).await {
+                                                                    Ok(msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to respond after dropping table: {e}");
+                                                                        }
+                                                                    }
+                                                                    Err(err_msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to send error response: {e}");
+                                                                        }
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                    CreateInteractionResponseMessage::new().content("This command must be used in a server (guild).")
+                                                                )).await {
+                                                                    tracing::error!("Failed to send guild-only response: {e}");
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -148,6 +238,38 @@ impl EventHandler for Handler {
                                                                             CreateInteractionResponseMessage::new().content(msg)
                                                                         )).await {
                                                                             tracing::error!("Failed to respond after dropping db: {e}");
+                                                                        }
+                                                                    }
+                                                                    Err(err_msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(err_msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to send error response: {e}");
+                                                                        }
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                    CreateInteractionResponseMessage::new().content("This command must be used in a server (guild).")
+                                                                )).await {
+                                                                    tracing::error!("Failed to send guild-only response: {e}");
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } else if sub.name == "table" {
+                                                if let CommandDataOptionValue::SubCommand(inner) = &sub.value {
+                                                    if let Some(name_opt) = inner.get(0) {
+                                                        if let CommandDataOptionValue::String(table_name) = &name_opt.value {
+                                                            if let Some(guild_id) = command.guild_id {
+                                                                let user_id = command.user.id;
+                                                                match crate::commands::sql::drop::table::run(&ctx, guild_id, user_id, table_name).await {
+                                                                    Ok(msg) => {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content(msg)
+                                                                        )).await {
+                                                                            tracing::error!("Failed to respond after dropping table: {e}");
                                                                         }
                                                                     }
                                                                     Err(err_msg) => {

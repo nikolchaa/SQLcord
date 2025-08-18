@@ -6,7 +6,7 @@ authors = ["Nikola Ranđelović <contact@nikolchaa.com>"]
 description = "🥏 A Discord bot for executing SQL commands in a fun and educational way."
 license = "MIT"
 categories = ["bot", "discord", "sql", "database"]
-license-file = "LICENSE"
+repository = "https://github.com/nikolchaa/sqlcord"
 
 [[bin]]
 name = "sqlcord"
