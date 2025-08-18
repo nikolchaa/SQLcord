@@ -43,8 +43,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Test EXPLAIN run function
     log_info("Testing EXPLAIN command");
     match sqlcord::commands::sql::explain::run("SELECT * FROM users").await {
-        Ok(result) => log_info(&format!("SUCCESS: {}", result)),
-        Err(e) => log_info(&format!("ERROR: {}", e)),
+        Ok(_embed) => log_info("SUCCESS: EXPLAIN returned info embed"),
+        Err(_embed) => log_info("ERROR: EXPLAIN returned error embed"),
     }
     
     // Test DROP TABLE run function - DISABLED: requires Discord context
