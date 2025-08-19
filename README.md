@@ -501,11 +501,6 @@ src/
 ├─ sql_parser.rs                  // SQL parsing utilities for column definitions, data types, and value parsing with validation.
 ├─ utils.rs                       // Small helpers: IDs, sanitizers, embed creators for consistent user interface.
 │
-├─ bin/                           // Test binaries for development and verification.
-│  ├─ test_registration.rs        // Tests dynamic command registration system.
-│  ├─ test_run_functions.rs       // Tests all command run functions.
-│  └─ test_bot_startup.rs         // Simulates bot startup with formatted logging.
-│
 ├─ commands/                      // Command implementations grouped by domain.
 │  ├─ mod.rs                      // Declares `sql` and `admin` modules. Contains `register_all_sql_commands()` for dynamic registration.
 │  ├─ sql/
