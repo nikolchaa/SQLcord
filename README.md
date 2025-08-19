@@ -18,7 +18,7 @@ A Discord bot for executing SQL commands in a fun and educational way. This proj
 - ✅ **VARCHAR length limits** - String size validation and enforcement
 - ✅ **Backward compatibility** - Support for legacy schema formats
 - ✅ **SQL conventions** - Proper single quote formatting for string values
-- 🚧 **Data querying** - SELECT operations (basic implementation exists)
+- ✅ **Data querying** - SELECT operations with full WHERE logic (AND/OR/parentheses)
 - 🚧 **Data modification** - UPDATE and DELETE operations (stubs exist)
 - 🚧 **Advanced features** - Joins, indexing, transactions (future work)
 
@@ -29,7 +29,7 @@ A Discord bot for executing SQL commands in a fun and educational way. This proj
 - `CHAR(size)` - Fixed-length strings with size limits
 - `BOOLEAN` - True/false values
 - `FLOAT`, `DOUBLE`, `DECIMAL` - Floating-point numbers
-- `DATE`, `TIME`, `DATETIME` - Date and time values (as strings)
+- `DATE`, `TIME`, `DATETIME` - Date and time values (must be valid ISO 8601 format)
 
 ### Constraints
 
@@ -73,6 +73,7 @@ This command will automatically discover and run all tests in the project. Make 
 - `/sql create table <name> [schema]` - creates a text channel named `table_<name>` under the current database category. Optionally accepts schema definitions.
 - `/sql use <name>` - selects an existing `db_<name>` for your user (kept in-memory per guild+user).
 - `/sql insert into <table> <data>` - inserts data into a table (Discord channel) with validation against the table schema.
+- `/sql select columns:<columns> from:<table> [distinct:<true/false>] [where:<conditions>]` - queries data from a table with support for column selection, DISTINCT filtering, and advanced WHERE conditions with AND/OR/parentheses logic.
 
 ### Table Schema Support
 
@@ -84,15 +85,87 @@ SQLcord supports defining table schemas when creating tables:
 
 **Supported Data Types:**
 
-- `INT`, `INTEGER` - Integer numbers
-- `VARCHAR(size)`, `CHAR(size)` - Text with optional size limit
-- `BOOLEAN`, `BOOL` - True/false values
-- `FLOAT`, `DOUBLE`, `DECIMAL` - Decimal numbers
-- `DATE`, `TIME`, `DATETIME` - Date and time values
+- `INT`, `INTEGER` - Integer numbers (no size specification allowed)
+- `VARCHAR(size)`, `CHAR(size)` - Text with required size limit (1-65535 characters)
+- `BOOLEAN`, `BOOL` - True/false values (no size specification allowed)
+- `FLOAT(precision)`, `DOUBLE(precision)`, `DECIMAL(precision)` - Decimal numbers with optional precision (1-65)
+- `DATE`, `TIME`, `DATETIME` - Date and time values (must be valid ISO 8601 format, no size specification allowed)
+
+**Schema Validation Rules:**
+
+- **Required sizes**: `VARCHAR` and `CHAR` must specify size: `VARCHAR(255)`, `CHAR(10)`
+- **No sizes allowed**: `INT`, `BOOLEAN`, `DATE`, `TIME`, `DATETIME` cannot have size specifications
+- **Optional precision**: `FLOAT`, `DOUBLE`, `DECIMAL` can optionally specify precision: `DECIMAL(10)`
+- **Size limits**: VARCHAR/CHAR sizes must be 1-65535, decimal precision must be 1-65
+- **Clear error messages**: Detailed validation feedback with examples and suggestions
+
+**Valid Schema Examples:**
+
+```bash
+# User management table
+/sql create table users id INT, name VARCHAR(100), email VARCHAR(255), active BOOLEAN, created_at DATETIME
+
+# Product catalog with pricing
+/sql create table products id INT, name VARCHAR(50), price DECIMAL(10), description VARCHAR(1000), in_stock BOOLEAN
+
+# System logs
+/sql create table logs timestamp DATETIME, level VARCHAR(10), message VARCHAR(500), user_id INT
+
+# Employee records
+/sql create table employees id INT PRIMARY KEY, first_name VARCHAR(50), last_name VARCHAR(50), salary FLOAT, hire_date DATE
+```
+
+**Common Validation Errors:**
+
+```bash
+# ❌ Missing size specification
+/sql create table users name VARCHAR
+# Error: "VARCHAR requires a size specification"
+
+# ❌ Invalid size on INT
+/sql create table users id INT(11)
+# Error: "INT does not support size specification"
+
+# ❌ Invalid size on BOOLEAN
+/sql create table users active BOOLEAN(1)
+# Error: "BOOLEAN does not support size specification"
+
+# ❌ Invalid size on DATE/TIME
+/sql create table events created_at DATETIME(20)
+# Error: "DATETIME does not support size specification"
+
+# ❌ Zero or invalid size
+/sql create table users name VARCHAR(0)
+# Error: "VARCHAR size must be greater than 0"
+```
+
+**Date/Time Validation Errors:**
+
+```bash
+# ❌ Invalid DATE format (must be YYYY-MM-DD)
+/sql insert into logs 'ASDASDASD', 'INFO', 'Test message'
+# Error: "Value 'ASDASDASD' is not a valid ISO date. Use format: YYYY-MM-DD (e.g., '2025-01-15')"
+
+# ❌ Invalid TIME format (must be HH:MM:SS with zero-padding)
+/sql insert into events '2:30:00', 'Meeting'
+# Error: "Value '2:30:00' is not a valid ISO time. Use format: HH:MM:SS[.fraction][Z|±HH:MM] (e.g., '14:30:00', '14:30:00.500Z')"
+
+# ❌ Invalid DATETIME format (must be ISO 8601)
+/sql insert into activities 'None', 'Test activity'
+# Error: "Value 'None' is not a valid ISO datetime. Use format: YYYY-MM-DDTHH:MM:SS[.fraction][Z|±HH:MM] (e.g., '2025-01-15T14:30:00Z')"
+
+# ❌ Invalid date values (like February 30th)
+/sql insert into events '2025-02-30', 'Invalid date'
+# Error: "Value '2025-02-30' is not a valid ISO date. Use format: YYYY-MM-DD (e.g., '2025-01-15')"
+```
 
 **Schema Features:**
 
 - **Type validation** - INSERT commands validate data against the defined schema
+  - **VARCHAR/CHAR length limits** - Enforces size constraints for string types
+  - **ISO 8601 date/time validation** - DATE, TIME, and DATETIME columns require valid ISO format
+  - **Numeric validation** - INT, FLOAT, DECIMAL values validated for correct format
+  - **Boolean validation** - BOOLEAN columns accept only true/false values
 - **Primary key constraints** - Prevents duplicate primary key values across rows
 - **Flexible insertion** - Tables without schemas accept any data format
 - **Backward compatibility** - Automatically handles tables created with older schema formats
@@ -105,15 +178,50 @@ SQLcord supports defining table schemas when creating tables:
 /sql insert into users 1, 'John Doe', true
 ```
 
-Results in structured data storage:
+**Results in structured data storage:**
 
 ```
-TIMESTAMP: 2025-08-19 00:14:00 UTC
+TIMESTAMP: 2025-08-19T00:14:00Z
 DATA:
   id: 1
   name: 'John Doe'
   active: true
 ```
+
+**Literal parsing rules and ISO examples**
+
+- DATE / TIME / DATETIME examples (preferred canonical ISO forms):
+
+  - DATE: `'2025-08-19'` → stored as string (use `YYYY-MM-DD`).
+  - TIME: `'00:14:00'`, `'00:14:00.123'`, or with offset `'00:14:00Z'` (use `HH:MM:SS[.fraction][Z|±HH:MM]`).
+  - DATETIME / TIMESTAMP: `'2025-08-19T00:14:00Z'` (preferred) or `'2025-08-19T00:14:00+00:00'` (use full ISO 8601 with `T` and `Z`/offset).
+
+  **⚠️ Important**: When inserting into DATE/TIME/DATETIME columns, the values are strictly validated for ISO 8601 format. Invalid formats like `'ASDASDASD'`, `'None'`, or `'2:30:00'` (missing zero-padding) will be rejected with detailed error messages.
+
+- Literal parsing rules (input → parsed `SqlValue`):
+
+  - Strings: must be single-quoted. Use doubled single-quote to escape inside strings:
+    - Input: `'it''s a test'` → `SqlValue::String("it's a test")`.
+    - Backslashes are preserved literally in the stored string:
+      - Input: `'C:\\path\\to\\file'` → `SqlValue::String("C:\\path\\to\\file")`.
+  - NULL: the unquoted token `NULL` (case-insensitive) → `SqlValue::Null`.
+  - Boolean: unquoted `true` / `false` (case-insensitive) → `SqlValue::Boolean(true/false)`.
+  - Numbers: unquoted numeric tokens are parsed with precedence:
+    1. Try integer parse first → `SqlValue::Integer(i64)` (e.g. `42` → `Integer(42)`).
+    2. If integer parse fails but token is a decimal → `SqlValue::Float(f64)` (e.g. `3.14` → `Float(3.14)`).
+  - Unquoted non-number/non-boolean tokens are rejected with an error; strings must be single-quoted.
+
+- Quick input → parsed examples:
+  - `'2025-08-19'` → `SqlValue::String("2025-08-19")` (DATE as string)
+  - `'00:14:00'` → `SqlValue::String("00:14:00")` (TIME as string)
+  - `'2025-08-19T00:14:00Z'` → `SqlValue::String("2025-08-19T00:14:00Z")` (DATETIME as string)
+  - `'it''s'` → `SqlValue::String("it's")`
+  - `'C:\\path\\file'` → `SqlValue::String("C:\\path\\file")`
+  - `NULL` → `SqlValue::Null`
+  - `true` / `TRUE` → `SqlValue::Boolean(true)`
+  - `123` → `SqlValue::Integer(123)`
+  - `123.0` → `SqlValue::Float(123.0)`
+  - `foo` → parse error: "Unquoted token 'foo' is not a number, boolean, or NULL; string literals must be single-quoted (e.g. 'foo')"
 
 ### Primary Key Constraints
 
@@ -225,12 +333,29 @@ The registration system prints formatted logs like:
 
 ### Table Operations with Schema
 
-- **Create a table with schema:**
-  - `/sql create table name:users schema:id INT, name VARCHAR(255), active BOOLEAN`
-  - Bot creates a channel `table_users` with the defined schema
+- **Create a table with comprehensive schema:**
+  - `/sql create table name:users schema:id INT, name VARCHAR(255), email VARCHAR(100), active BOOLEAN, created_at DATETIME`
+  - Bot creates a channel `table_users` with the defined schema and validation rules
+- **Create a table with decimal precision:**
+  - `/sql create table name:products schema:id INT, name VARCHAR(50), price DECIMAL(10), description VARCHAR(1000)`
+  - Bot validates that all required size specifications are provided
 - **Create a simple table without schema:**
+
   - `/sql create table name:logs`
   - Bot creates a flexible table that accepts any data format
+
+- **Common schema validation examples:**
+
+  ```bash
+  # ✅ Valid schemas
+  /sql create table events id INT, title VARCHAR(100), start_time TIME, event_date DATE
+  /sql create table orders id INT PRIMARY KEY, amount FLOAT, customer VARCHAR(50)
+
+  # ❌ Invalid schemas (will show helpful error messages)
+  /sql create table users name VARCHAR          # Missing size
+  /sql create table users id INT(11)           # INT doesn't support size
+  /sql create table users active BOOLEAN(1)    # BOOLEAN doesn't support size
+  ```
 
 ### Data Operations
 
@@ -239,7 +364,7 @@ The registration system prints formatted logs like:
   - `/sql insert into table:users data:1, 'Alice Johnson', true`
   - Bot validates the data against the schema and stores it as:
     ```
-    TIMESTAMP: 2025-08-19 00:14:00 UTC
+    TIMESTAMP: 2025-08-19T00:14:00Z
     DATA:
       id: 1
       name: "Alice Johnson"
@@ -247,8 +372,86 @@ The registration system prints formatted logs like:
     ```
 
 - **Insert data into a flexible table:**
-  - `/sql insert into table:logs data:'System started', 2025-08-19, INFO`
-  - Bot stores the data without schema validation
+  - `/sql insert into table:logs data:'System started', '2025-08-19T00:14:00Z', 'INFO'`
+  - Use SQL-style quoting for strings (single quotes). Flexible tables accept any values and are stored without schema validation.
+
+### Data Querying with SELECT
+
+SQLcord supports comprehensive SELECT queries with dynamic formatting and advanced WHERE conditions:
+
+**Basic SELECT operations:**
+
+- **Select all data:**
+
+  - `/sql select columns:* from:users`
+  - Returns all columns and rows from the users table
+
+- **Select specific columns:**
+  - `/sql select columns:name, email from:users`
+  - Returns only the specified columns
+
+**Advanced WHERE clauses with AND/OR logic:**
+
+- **Single condition:**
+
+  - `/sql select columns:* from:users where:name='John'`
+  - Returns rows where name equals 'John'
+
+- **AND logic (all conditions must be true):**
+
+  - `/sql select columns:* from:users where:name='John' AND age=25`
+  - Returns rows where both name is 'John' AND age is 25
+
+- **OR logic (any condition can be true):**
+
+  - `/sql select columns:* from:users where:name='John' OR name='Jane'`
+  - Returns rows where name is either 'John' OR 'Jane'
+
+- **Mixed AND/OR logic:**
+
+  - `/sql select columns:* from:products where:category='Electronics' AND price=100 OR category='Books'`
+  - Returns products that are either (Electronics AND price $100) OR Books
+
+- **Parentheses for grouping:**
+  - `/sql select columns:* from:users where:(name='John' OR name='Jane') AND age=25`
+  - Returns users named John OR Jane who are also 25 years old
+- **Complex nested conditions:**
+
+  - `/sql select columns:* from:products where:(category='Electronics' OR category='Gaming') AND (price=100 OR price=200)`
+  - Returns products in Electronics OR Gaming categories with price $100 OR $200
+
+- **Advanced grouping:**
+  - `/sql select columns:* from:employees where:(department='IT' AND role='Developer') OR (department='Sales' AND role='Manager')`
+  - Returns IT Developers OR Sales Managers
+
+**Additional SELECT features:**
+
+- **DISTINCT filtering:**
+
+  - `/sql select columns:category from:products distinct:true`
+  - Returns unique values only, removing duplicates
+
+- **Dynamic table formatting:**
+  - Automatically adjusts column widths based on content
+  - Handles long text values gracefully
+  - Shows up to 20 rows with truncation indicators for larger results
+
+**WHERE clause operator precedence:**
+
+- **Parentheses** have highest precedence (force evaluation order)
+- **AND** has higher precedence than OR
+- **OR** has lowest precedence
+- Example: `A AND B OR C` evaluates as `(A AND B) OR C`
+- Use parentheses to override: `A AND (B OR C)` evaluates B OR C first
+- Use proper spacing: `column='value' AND other='value'` (spaces around AND/OR)
+- Complex example: `(A OR B) AND (C OR D)` ensures both groups are evaluated first
+
+**SELECT result format:**
+
+- Blue info-style embed with query statistics
+- Formatted table with row numbers
+- Query information (table, columns, filters, row count)
+- Truncation notes for long values or large result sets
 
 ## Behavior ⚠️
 
@@ -272,7 +475,7 @@ The registration system prints formatted logs like:
 - ✔️ **Data insertion** - Insert validated data with schema support
 - ✔️ **Schema validation** - Type checking and constraint validation
 - ✔️ **Backward compatibility** - Support for legacy schema formats
-- 🚧 **Data querying** - SELECT operations (basic implementation exists)
+- ✔️ **Data querying** - SELECT operations with full WHERE logic (AND/OR/parentheses)
 - 🚧 **Data modification** - UPDATE and DELETE operations (stubs exist)
 - 🚧 **Advanced features** - Joins, indexing, transactions (future work)
 

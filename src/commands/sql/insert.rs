@@ -91,7 +91,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                     if let Err(validation_error) = validate_values_against_schema(&parsed_values, &schema) {
                         return Err(create_error_embed(
                             "✖️ Data Validation Failed",
-                            &format!("**Validation Error:**\n{}\n\n💡 **Schema:** {}", validation_error, format_schema_info(&schema))
+                            &format!("**Validation Error:**\n{}\n\n**Schema:** {}", validation_error, format_schema_info(&schema))
                         ));
                     }
                     

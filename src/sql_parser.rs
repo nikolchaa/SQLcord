@@ -127,13 +127,91 @@ pub fn parse_column_definitions(schema_str: &str) -> Result<Vec<ColumnDefinition
             ));
         }
 
-        // Set default sizes for types that commonly have them
-        if size.is_none() {
-            size = match normalized_type.as_str() {
-                "VARCHAR" => Some(255), // Default VARCHAR size
-                "CHAR" => Some(1),      // Default CHAR size
-                _ => None,
-            };
+        // Validate size constraints for specific data types
+        match normalized_type.as_str() {
+            "VARCHAR" | "CHAR" => {
+                if size.is_none() {
+                    return Err(format!(
+                        "**{}** requires a size specification for column **{}**\n\n**Examples:**\n• `{} VARCHAR(255)` - variable-length string up to 255 characters\n• `{} CHAR(10)` - fixed-length string of exactly 10 characters\n\n**Common sizes:** VARCHAR(50), VARCHAR(255), VARCHAR(1000), CHAR(1), CHAR(10)",
+                        normalized_type,
+                        name,
+                        name,
+                        name
+                    ));
+                }
+                if let Some(s) = size {
+                    if s == 0 {
+                        return Err(format!(
+                            "**{}** size must be greater than 0 for column **{}**\n\n**Examples:** `{} VARCHAR(1)`, `{} CHAR(10)`",
+                            normalized_type,
+                            name,
+                            name,
+                            name
+                        ));
+                    }
+                    if s > 65535 {
+                        return Err(format!(
+                            "**{}** size {} is too large for column **{}** (maximum: 65535)\n\n**Suggestion:** Use a smaller size like `{} VARCHAR(1000)` or consider if you really need such a large text field",
+                            normalized_type,
+                            s,
+                            name,
+                            name
+                        ));
+                    }
+                }
+            },
+            "BOOLEAN" | "DATE" | "TIME" | "DATETIME" => {
+                if size.is_some() {
+                    return Err(format!(
+                        "**{}** does not support size specification for column **{}**\n\n**Correct usage:** `{} {}`\n**Invalid usage:** `{} {}({})`\n\n**Explanation:** {} values have a fixed internal representation and don't need size limits",
+                        normalized_type,
+                        name,
+                        name,
+                        normalized_type,
+                        name,
+                        normalized_type,
+                        size.unwrap(),
+                        normalized_type
+                    ));
+                }
+            },
+            "INT" => {
+                if size.is_some() {
+                    return Err(format!(
+                        "**INT** does not support size specification for column **{}**\n\n**Correct usage:** `{} INT`\n**Invalid usage:** `{} INT({})`\n\n**Explanation:** INT values are fixed-size 64-bit integers and don't need size limits",
+                        name,
+                        name,
+                        name,
+                        size.unwrap()
+                    ));
+                }
+            },
+            "FLOAT" | "DOUBLE" | "DECIMAL" => {
+                if let Some(s) = size {
+                    if s == 0 {
+                        return Err(format!(
+                            "**{}** precision must be greater than 0 for column **{}**\n\n**Examples:** `{} DECIMAL(10)`, `{} FLOAT(7)`",
+                            normalized_type,
+                            name,
+                            name,
+                            name
+                        ));
+                    }
+                    if s > 65 {
+                        return Err(format!(
+                            "**{}** precision {} is too large for column **{}** (maximum: 65)\n\n**Suggestion:** Use a smaller precision like `{} DECIMAL(18)` for most financial calculations",
+                            normalized_type,
+                            s,
+                            name,
+                            name
+                        ));
+                    }
+                }
+                // FLOAT/DOUBLE/DECIMAL can optionally have precision specified, but it's not required
+            },
+            _ => {
+                // Unknown type - should not reach here due to validation above
+            }
         }
 
         // Check for constraints in remaining parts
@@ -416,7 +494,42 @@ fn validate_sql_value_type(value: &SqlValue, column: &ColumnDefinition, position
             }
         },
         "DATE" | "TIME" | "DATETIME" => {
-            if !matches!(value, SqlValue::String(_)) {
+            if let SqlValue::String(s) = value {
+                // Validate ISO format for date/time types
+                match column.data_type.as_str() {
+                    "DATE" => {
+                        if !is_valid_iso_date(s) {
+                            return Err(format!(
+                                "❌ **Invalid DATE format** for column **{}** (position {})\n\nExpected: **ISO 8601 date** (YYYY-MM-DD)\nGot: **'{}'**\n\n**Valid examples:**\n• `'2025-08-19'`\n• `'2023-12-25'`\n• `'2024-02-29'` (leap year)",
+                                column.name,
+                                position,
+                                s
+                            ));
+                        }
+                    },
+                    "TIME" => {
+                        if !is_valid_iso_time(s) {
+                            return Err(format!(
+                                "❌ **Invalid TIME format** for column **{}** (position {})\n\nExpected: **ISO 8601 time** (HH:MM:SS[.fraction][Z|±HH:MM])\nGot: **'{}'**\n\n**Valid examples:**\n• `'14:30:00'`\n• `'09:15:30.123'`\n• `'23:59:59Z'`\n• `'12:00:00+02:00'`",
+                                column.name,
+                                position,
+                                s
+                            ));
+                        }
+                    },
+                    "DATETIME" => {
+                        if !is_valid_iso_datetime(s) {
+                            return Err(format!(
+                                "❌ **Invalid DATETIME format** for column **{}** (position {})\n\nExpected: **ISO 8601 datetime** (YYYY-MM-DDTHH:MM:SS[.fraction][Z|±HH:MM])\nGot: **'{}'**\n\n**Valid examples:**\n• `'2025-08-19T14:30:00Z'`\n• `'2023-12-25T09:15:30.123Z'`\n• `'2024-06-15T12:00:00+02:00'`\n• `'2025-01-01T00:00:00.000Z'`",
+                                column.name,
+                                position,
+                                s
+                            ));
+                        }
+                    },
+                    _ => {}
+                }
+            } else {
                 return Err(format!(
                     "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **string** (ISO date format)\nGot: **{}**\n\n**Examples:**\n• DATE: `'2023-12-25'`\n• TIME: `'14:30:00'`\n• DATETIME: `'2023-12-25T14:30:00Z'`",
                     column.name,
@@ -478,17 +591,105 @@ mod tests {
     }
 
     #[test]
-    fn test_varchar_default_size() {
-        let schema = "name VARCHAR, description TEXT";
+    fn test_varchar_requires_size() {
+        let schema = "name VARCHAR";
+        let result = parse_column_definitions(schema);
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.contains("VARCHAR") && error.contains("requires a size specification"));
+    }
+
+    #[test]
+    fn test_char_requires_size() {
+        let schema = "code CHAR";
+        let result = parse_column_definitions(schema);
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.contains("CHAR") && error.contains("requires a size specification"));
+    }
+
+    #[test]
+    fn test_boolean_rejects_size() {
+        let schema = "active BOOLEAN(1)";
+        let result = parse_column_definitions(schema);
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.contains("BOOLEAN") && error.contains("does not support size specification"));
+    }
+
+    #[test]
+    fn test_date_types_reject_size() {
+        let test_cases = vec![
+            "birth_date DATE(10)",
+            "login_time TIME(8)",
+            "created_at DATETIME(20)",
+        ];
+        
+        for case in test_cases {
+            let result = parse_column_definitions(case);
+            assert!(result.is_err(), "Expected error for: {}", case);
+            let error = result.unwrap_err();
+            assert!(error.contains("does not support size specification"), "Error should mention size specification for: {}", case);
+        }
+    }
+
+    #[test]
+    fn test_int_rejects_size() {
+        let schema = "id INT(11)";
+        let result = parse_column_definitions(schema);
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.contains("INT") && error.contains("does not support size specification"));
+    }
+
+    #[test]
+    fn test_decimal_with_valid_size() {
+        let schema = "price DECIMAL(10), amount FLOAT(7), total DOUBLE(15)";
         let columns = parse_column_definitions(schema).unwrap();
         
-        assert_eq!(columns.len(), 2);
-        assert_eq!(columns[0].name, "name");
-        assert_eq!(columns[0].data_type, "VARCHAR");
-        assert_eq!(columns[0].size, Some(255)); // Default size
-        assert_eq!(columns[1].name, "description");
-        assert_eq!(columns[1].data_type, "VARCHAR"); // TEXT normalizes to VARCHAR
-        assert_eq!(columns[1].size, Some(255)); // Default size
+        assert_eq!(columns.len(), 3);
+        assert_eq!(columns[0].data_type, "DECIMAL");
+        assert_eq!(columns[0].size, Some(10));
+        assert_eq!(columns[1].data_type, "FLOAT");
+        assert_eq!(columns[1].size, Some(7));
+        assert_eq!(columns[2].data_type, "DOUBLE");
+        assert_eq!(columns[2].size, Some(15));
+    }
+
+    #[test]
+    fn test_decimal_with_invalid_size() {
+        let test_cases = vec![
+            "price DECIMAL(0)",
+            "amount FLOAT(66)",
+            "total DOUBLE(100)",
+        ];
+        
+        for case in test_cases {
+            let result = parse_column_definitions(case);
+            assert!(result.is_err(), "Expected error for: {}", case);
+        }
+    }
+
+    #[test]
+    fn test_varchar_size_validation() {
+        // Test zero size
+        let result = parse_column_definitions("name VARCHAR(0)");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("size must be greater than 0"));
+        
+        // Test too large size
+        let result = parse_column_definitions("description VARCHAR(70000)");
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.contains("size") && error.contains("too large"));
+        
+        // Test valid size
+        let result = parse_column_definitions("name VARCHAR(255)");
+        assert!(result.is_ok());
     }
 
     #[test]
@@ -598,5 +799,197 @@ mod tests {
         let result = validate_values_against_schema(&values, &schema);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("String too long"));
+    }
+}
+
+/// Validate ISO 8601 date format (YYYY-MM-DD)
+fn is_valid_iso_date(date_str: &str) -> bool {
+    if date_str.len() != 10 {
+        return false;
+    }
+    
+    let parts: Vec<&str> = date_str.split('-').collect();
+    if parts.len() != 3 {
+        return false;
+    }
+    
+    // Parse year, month, day
+    let year = match parts[0].parse::<i32>() {
+        Ok(y) if y >= 1000 && y <= 9999 && parts[0].len() == 4 => y,
+        _ => return false,
+    };
+    
+    let month = match parts[1].parse::<u32>() {
+        Ok(m) if m >= 1 && m <= 12 && parts[1].len() == 2 => m,
+        _ => return false,
+    };
+    
+    let day = match parts[2].parse::<u32>() {
+        Ok(d) if d >= 1 && d <= 31 && parts[2].len() == 2 => d,
+        _ => return false,
+    };
+    
+    // Basic month/day validation
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => day <= 31,
+        4 | 6 | 9 | 11 => day <= 30,
+        2 => {
+            // February leap year check
+            let is_leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+            day <= if is_leap { 29 } else { 28 }
+        },
+        _ => false,
+    }
+}
+
+/// Validate ISO 8601 time format (HH:MM:SS[.fraction][Z|±HH:MM])
+fn is_valid_iso_time(time_str: &str) -> bool {
+    // Handle timezone suffix
+    let (time_part, _tz_part) = if time_str.ends_with('Z') {
+        (&time_str[..time_str.len()-1], Some("Z"))
+    } else if let Some(pos) = time_str.rfind('+').or_else(|| time_str.rfind('-')) {
+        if pos > 6 { // Ensure we don't split on date part
+            (&time_str[..pos], Some(&time_str[pos..]))
+        } else {
+            (time_str, None)
+        }
+    } else {
+        (time_str, None)
+    };
+    
+    // Split main time components
+    let main_parts: Vec<&str> = time_part.split(':').collect();
+    if main_parts.len() != 3 {
+        return false;
+    }
+    
+    // Validate hours
+    let _hours = match main_parts[0].parse::<u32>() {
+        Ok(h) if h <= 23 && main_parts[0].len() == 2 => h,
+        _ => return false,
+    };
+    
+    // Validate minutes
+    let _minutes = match main_parts[1].parse::<u32>() {
+        Ok(m) if m <= 59 && main_parts[1].len() == 2 => m,
+        _ => return false,
+    };
+    
+    // Validate seconds (may include fractional part)
+    let seconds_part = main_parts[2];
+    if seconds_part.contains('.') {
+        let sec_parts: Vec<&str> = seconds_part.split('.').collect();
+        if sec_parts.len() != 2 {
+            return false;
+        }
+        
+        // Validate whole seconds
+        let _seconds = match sec_parts[0].parse::<u32>() {
+            Ok(s) if s <= 59 && sec_parts[0].len() == 2 => s,
+            _ => return false,
+        };
+        
+        // Validate fractional seconds (must be digits)
+        let fraction = sec_parts[1];
+        if fraction.is_empty() || !fraction.chars().all(|c| c.is_ascii_digit()) {
+            return false;
+        }
+    } else {
+        // No fractional part
+        let _seconds = match seconds_part.parse::<u32>() {
+            Ok(s) if s <= 59 && seconds_part.len() == 2 => s,
+            _ => return false,
+        };
+    }
+    
+    true
+}
+
+/// Validate ISO 8601 datetime format (YYYY-MM-DDTHH:MM:SS[.fraction][Z|±HH:MM])
+fn is_valid_iso_datetime(datetime_str: &str) -> bool {
+    if !datetime_str.contains('T') {
+        return false;
+    }
+    
+    let parts: Vec<&str> = datetime_str.split('T').collect();
+    if parts.len() != 2 {
+        return false;
+    }
+    
+    let date_part = parts[0];
+    let time_part = parts[1];
+    
+    is_valid_iso_date(date_part) && is_valid_iso_time(time_part)
+}
+
+#[cfg(test)]
+mod iso_tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_iso_dates() {
+        assert!(is_valid_iso_date("2025-08-19"));
+        assert!(is_valid_iso_date("2023-12-25"));
+        assert!(is_valid_iso_date("2024-02-29")); // leap year
+        assert!(is_valid_iso_date("2000-02-29")); // leap year
+        assert!(is_valid_iso_date("1999-12-31"));
+    }
+
+    #[test]
+    fn test_invalid_iso_dates() {
+        assert!(!is_valid_iso_date("2023-13-01")); // invalid month
+        assert!(!is_valid_iso_date("2023-02-30")); // invalid day for February
+        assert!(!is_valid_iso_date("2023-04-31")); // invalid day for April
+        assert!(!is_valid_iso_date("2023-2-29")); // non-leap year
+        assert!(!is_valid_iso_date("23-08-19")); // wrong year format
+        assert!(!is_valid_iso_date("2023/08/19")); // wrong separator
+        assert!(!is_valid_iso_date("2023-8-19")); // missing zero padding
+        assert!(!is_valid_iso_date("")); // empty string
+        assert!(!is_valid_iso_date("not-a-date")); // invalid format
+    }
+
+    #[test]
+    fn test_valid_iso_times() {
+        assert!(is_valid_iso_time("14:30:00"));
+        assert!(is_valid_iso_time("09:15:30"));
+        assert!(is_valid_iso_time("23:59:59"));
+        assert!(is_valid_iso_time("00:00:00"));
+        assert!(is_valid_iso_time("12:30:45.123"));
+        assert!(is_valid_iso_time("14:30:00Z"));
+        assert!(is_valid_iso_time("12:00:00+02:00"));
+        assert!(is_valid_iso_time("08:30:15-05:00"));
+        assert!(is_valid_iso_time("16:45:30.999Z"));
+    }
+
+    #[test]
+    fn test_invalid_iso_times() {
+        assert!(!is_valid_iso_time("25:30:00")); // invalid hour
+        assert!(!is_valid_iso_time("14:60:00")); // invalid minute
+        assert!(!is_valid_iso_time("14:30:60")); // invalid second
+        assert!(!is_valid_iso_time("14:30")); // missing seconds
+        assert!(!is_valid_iso_time("14-30-00")); // wrong separator
+        assert!(!is_valid_iso_time("2:30:00")); // missing zero padding
+        assert!(!is_valid_iso_time("14:30:00.")); // empty fraction
+        assert!(!is_valid_iso_time("")); // empty string
+        assert!(!is_valid_iso_time("not-a-time")); // invalid format
+    }
+
+    #[test]
+    fn test_valid_iso_datetimes() {
+        assert!(is_valid_iso_datetime("2025-08-19T14:30:00Z"));
+        assert!(is_valid_iso_datetime("2023-12-25T09:15:30.123Z"));
+        assert!(is_valid_iso_datetime("2024-06-15T12:00:00+02:00"));
+        assert!(is_valid_iso_datetime("2025-01-01T00:00:00.000Z"));
+        assert!(is_valid_iso_datetime("2023-02-28T23:59:59"));
+    }
+
+    #[test]
+    fn test_invalid_iso_datetimes() {
+        assert!(!is_valid_iso_datetime("2025-08-19 14:30:00")); // missing T
+        assert!(!is_valid_iso_datetime("2025-13-19T14:30:00Z")); // invalid month
+        assert!(!is_valid_iso_datetime("2025-08-19T25:30:00Z")); // invalid hour
+        assert!(!is_valid_iso_datetime("2025-08-19T14:60:00Z")); // invalid minute
+        assert!(!is_valid_iso_datetime("not-a-datetime")); // invalid format
+        assert!(!is_valid_iso_datetime("")); // empty string
     }
 }

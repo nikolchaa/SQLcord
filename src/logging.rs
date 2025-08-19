@@ -18,7 +18,7 @@ pub fn log_info(msg: &str) {
 pub fn log_error(msg: &str) {
     let now = Utc::now();
     let ts = now.format("%Y-%m-%dT%H:%M:%S%.6fZ");
-    eprintln!("{}{}{}  {}ERROR{} {}",
+    eprintln!("{}{}{} {}ERROR{} {}",
         GREY, ts, WHITE,
         RED, WHITE,
         msg

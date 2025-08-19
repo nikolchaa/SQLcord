@@ -95,10 +95,13 @@ pub fn register_sql_group() -> CreateCommand {
             CreateCommandOption::new(CommandOptionType::SubCommand, "use", "Select database to use")
                 .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "name", "Database name").required(true))
         )
-        // lightweight placeholders for data ops
+        // select subcommand: /sql select <columns> from <table> [distinct] [where]
         .add_option(
             CreateCommandOption::new(CommandOptionType::SubCommand, "select", "Read rows from a table")
-                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "table", "Table name").required(true))
+                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "columns", "Columns to select (e.g., 'id, name' or '*')").required(true))
+                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "from", "Table name").required(true))
+                .add_sub_option(CreateCommandOption::new(CommandOptionType::Boolean, "distinct", "Select distinct values only").required(false))
+                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "where", "WHERE clause with AND/OR logic and parentheses (e.g., '(name=\"John\" OR name=\"Jane\") AND age=\"25\"')").required(false))
         )
         .add_option(
             CreateCommandOption::new(CommandOptionType::SubCommandGroup, "insert", "Insert resources")

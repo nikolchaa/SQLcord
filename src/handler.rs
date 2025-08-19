@@ -377,6 +377,78 @@ impl EventHandler for Handler {
                                     _ => {}
                                 }
                             }
+                            "select" => {
+                                match &opt.value {
+                                    CommandDataOptionValue::SubCommand(params) => {
+                                        // Extract parameters
+                                        let mut columns = None;
+                                        let mut table = None;
+                                        let mut distinct = None;
+                                        let mut where_clause = None;
+                                        
+                                        for param in params {
+                                            match param.name.as_str() {
+                                                "columns" => {
+                                                    if let CommandDataOptionValue::String(cols) = &param.value {
+                                                        columns = Some(cols.as_str());
+                                                    }
+                                                }
+                                                "from" => {
+                                                    if let CommandDataOptionValue::String(tbl) = &param.value {
+                                                        table = Some(tbl.as_str());
+                                                    }
+                                                }
+                                                "distinct" => {
+                                                    if let CommandDataOptionValue::Boolean(dist) = &param.value {
+                                                        distinct = Some(*dist);
+                                                    }
+                                                }
+                                                "where" => {
+                                                    if let CommandDataOptionValue::String(whr) = &param.value {
+                                                        where_clause = Some(whr.as_str());
+                                                    }
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+                                        
+                                        if let (Some(columns), Some(table)) = (columns, table) {
+                                            if let Some(guild_id) = command.guild_id {
+                                                let user_id = command.user.id;
+                                                match crate::commands::sql::select::run(&ctx, guild_id, user_id, columns, table, distinct, where_clause).await {
+                                                    Ok(embed) => {
+                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                            CreateInteractionResponseMessage::new().embed(embed)
+                                                        )).await {
+                                                            tracing::error!("Failed to respond after selecting data: {e}");
+                                                        }
+                                                    }
+                                                    Err(embed) => {
+                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                            CreateInteractionResponseMessage::new().embed(embed)
+                                                        )).await {
+                                                            tracing::error!("Failed to send select error response: {e}");
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                    CreateInteractionResponseMessage::new().content("This command must be used in a server (guild).")
+                                                )).await {
+                                                    tracing::error!("Failed to send guild-only response: {e}");
+                                                }
+                                            }
+                                        } else {
+                                            if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                CreateInteractionResponseMessage::new().content("Missing required parameters: columns and table name.")
+                                            )).await {
+                                                tracing::error!("Failed to send parameter error response: {e}");
+                                            }
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
                             "insert" => {
                                 match &opt.value {
                                     CommandDataOptionValue::SubCommandGroup(groups) => {
