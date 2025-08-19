@@ -107,7 +107,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                                 format_sql_values_for_display(&parsed_values, &schema)
                             );
                             log_info(&format!("SUCCESS: Data inserted into table {}", table_channel_name));
-                            Ok(create_success_embed("✅ Row Inserted", &success_msg))
+                            Ok(create_success_embed("✔️ Row Inserted", &success_msg))
                         },
                         Err(e) => {
                             tracing::error!("Failed to insert data into table channel: {e}");
