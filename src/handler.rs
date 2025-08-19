@@ -353,23 +353,28 @@ impl EventHandler for Handler {
                             "explain" => {
                                 match &opt.value {
                                     CommandDataOptionValue::SubCommand(params) => {
-                                        if let Some(operation_opt) = params.get(0) {
-                                            if let CommandDataOptionValue::String(operation) = &operation_opt.value {
-                                                match crate::commands::sql::explain::run(operation).await {
-                                                    Ok(embed) => {
-                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                            CreateInteractionResponseMessage::new().embed(embed)
-                                                        )).await {
-                                                            tracing::error!("Failed to respond with explanation: {e}");
-                                                        }
-                                                    }
-                                                    Err(embed) => {
-                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
-                                                            CreateInteractionResponseMessage::new().embed(embed)
-                                                        )).await {
-                                                            tracing::error!("Failed to send explain error response: {e}");
-                                                        }
-                                                    }
+                                        // operation is now optional; if missing, pass an empty string
+                                        let operation = params.get(0).and_then(|operation_opt| {
+                                            if let CommandDataOptionValue::String(op) = &operation_opt.value {
+                                                Some(op.as_str())
+                                            } else {
+                                                None
+                                            }
+                                        }).unwrap_or("");
+
+                                        match crate::commands::sql::explain::run(operation).await {
+                                            Ok(embed) => {
+                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                    CreateInteractionResponseMessage::new().embed(embed)
+                                                )).await {
+                                                    tracing::error!("Failed to respond with explanation: {e}");
+                                                }
+                                            }
+                                            Err(embed) => {
+                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                    CreateInteractionResponseMessage::new().embed(embed)
+                                                )).await {
+                                                    tracing::error!("Failed to send explain error response: {e}");
                                                 }
                                             }
                                         }

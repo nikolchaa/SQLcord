@@ -86,7 +86,7 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
             **Session**: Each user has their own database context per server"
         ),
         "select" => (
-            "� SELECT",
+            "🪝 SELECT",
             "**Discord Mapping**: Queries data from table channels by reading stored messages\n\n\
             **Process**:\n\
             • Requires active database selection (`USE <db>`)\n\
@@ -166,11 +166,11 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
               id: 1\n\
               name: 'John Doe'\n\
               active: true\n\
-            ```\n\n\
+            ```\n\
             **Backward Compatibility**: Handles tables created with legacy schema formats automatically"
         ),
         "update" => (
-            "✏️ UPDATE (Future)",
+            "✏️ UPDATE",
             "**Discord Mapping**: Will modify existing data in table channels\n\n\
             **Planned Process**:\n\
             • Locate and modify specific records\n\
@@ -179,7 +179,7 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
             **Status**: Not yet implemented"
         ),
         "delete" => (
-            "✖️ DELETE (Future)",
+            "✖️ DELETE",
             "**Discord Mapping**: Will remove data from table channels\n\n\
             **Planned Process**:\n\
             • Remove specific records from tables\n\
@@ -188,37 +188,18 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
             **Status**: Not yet implemented"
         ),
         _ => (
-            "❓ Unknown Operation",
-            "**Available Commands** (Full Feature Status):\n\
-            • ✅ `CREATE DATABASE` - Create database categories with permission management\n\
-            • ✅ `DROP DATABASE` - Delete empty database categories safely\n\
-            • ✅ `USE <database>` - Select current working database (per-user context)\n\
-            • ✅ `CREATE TABLE` - Create tables with full schema support and constraints\n\
-            • ✅ `DROP TABLE` - Delete tables and all their data permanently\n\
-            • ✅ `SELECT` - **FULLY IMPLEMENTED** - Query data with column selection, filtering, and DISTINCT\n\
-            • ✅ `INSERT` - **FULLY IMPLEMENTED** - Add validated data with comprehensive constraint checking\n\
-            • 🚧 `UPDATE` - Modify existing data (planned feature)\n\
-            • 🚧 `DELETE` - Remove data with conditions (planned feature)\n\n\
-            **🚀 Advanced Features Implemented**:\n\
-            • ✅ **Complete schema validation** - INT, VARCHAR(n), CHAR(n), BOOLEAN, FLOAT, DOUBLE, DECIMAL, DATE, TIME, DATETIME\n\
-            • ✅ **PRIMARY KEY constraints** - Automatic uniqueness enforcement across all table rows\n\
-            • ✅ **VARCHAR/CHAR length validation** - String size limits enforced on insertion\n\
-            • ✅ **Column selection and filtering** - SELECT with *, specific columns, WHERE conditions\n\
-            • ✅ **DISTINCT queries** - Remove duplicate rows from results\n\
-            • ✅ **SQL-compliant formatting** - Single quotes for strings, proper NULL handling\n\
-            • ✅ **Comprehensive error messages** - Detailed validation errors with helpful examples\n\
-            • ✅ **Backward compatibility** - Automatic handling of legacy table formats\n\
-            • ✅ **Formatted result display** - Professional table output with row numbers and statistics\n\n\
-            **� Query Examples**:\n\
-            • Get all data: `/sql select columns:* from:users`\n\
-            • Specific columns: `/sql select columns:id, name, email from:customers`\n\
-            • With filtering: `/sql select columns:name from:products where:price = '29.99'`\n\
-            • Unique values: `/sql select columns:category from:products distinct:true`\n\n\
-            **💾 Data Examples**:\n\
-            • Insert with validation: `/sql insert users 1, 'John Doe', 'john@email.com'`\n\
-            • Primary key protection: Duplicate IDs automatically rejected\n\
-            • Length validation: VARCHAR(50) rejects strings longer than 50 characters\n\n\
-            💡 **Quick Help**:\n\
+            "❔ EXPLAIN",
+            "**Available Commands**:\n\n\
+            • `CREATE DATABASE` - Create database categories with permission management\n\
+            • `DROP DATABASE` - Delete empty database categories safely\n\
+            • `USE <database>` - Select current working database (per-user context)\n\
+            • `CREATE TABLE` - Create tables with full schema support and constraints\n\
+            • `DROP TABLE` - Delete tables and all their data permanently\n\
+            • `SELECT` - Query data with column selection, filtering, and DISTINCT\n\
+            • `INSERT` - Add validated data with comprehensive constraint checking\n\
+            • `UPDATE` - Modify existing data (🚧 planned feature)\n\
+            • `DELETE` - Remove data with conditions (🚧 planned feature)\n\n\
+            💡 **Quick Help**:\n\n\
             • `/sql explain create table` - Schema and constraint details\n\
             • `/sql explain insert` - Data validation and constraint enforcement\n\
             • `/sql explain select` - Querying and filtering capabilities"

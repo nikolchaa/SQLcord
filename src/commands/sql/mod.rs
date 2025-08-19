@@ -121,6 +121,6 @@ pub fn register_sql_group() -> CreateCommand {
         )
         .add_option(
             CreateCommandOption::new(CommandOptionType::SubCommand, "explain", "Explain an operation")
-                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "op", "Operation to explain").required(true))
+                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "op", "Operation to explain").required(false))
         )
 }
