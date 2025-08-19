@@ -97,7 +97,7 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                 // Add schema to channel topic if provided
                 if let Some(columns) = &parsed_schema {
                     let schema_description = columns.iter()
-                        .map(|col| format!("{}: {}", col.name, col.data_type))
+                        .map(|col| format!("{} {}", col.name, col.data_type))
                         .collect::<Vec<_>>()
                         .join(", ");
                     builder = builder.topic(&format!("Schema: {}", schema_description));

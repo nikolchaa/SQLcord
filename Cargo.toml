@@ -12,18 +12,6 @@ repository = "https://github.com/nikolchaa/sqlcord"
 name = "sqlcord"
 path = "src/main.rs"
 
-[[bin]]
-name = "test_registration"
-path = "src/bin/test_registration.rs"
-
-[[bin]]
-name = "test_run_functions"
-path = "src/bin/test_run_functions.rs"
-
-[[bin]]
-name = "test_bot_startup"
-path = "src/bin/test_bot_startup.rs"
-
 [dependencies]
 
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }

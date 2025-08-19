@@ -377,6 +377,52 @@ impl EventHandler for Handler {
                                     _ => {}
                                 }
                             }
+                            "insert" => {
+                                match &opt.value {
+                                    CommandDataOptionValue::SubCommandGroup(groups) => {
+                                        if let Some(sub) = groups.get(0) {
+                                            if sub.name == "into" {
+                                                if let CommandDataOptionValue::SubCommand(params) = &sub.value {
+                                                    if let Some(table_opt) = params.get(0) {
+                                                        if let CommandDataOptionValue::String(table_name) = &table_opt.value {
+                                                            if let Some(data_opt) = params.get(1) {
+                                                                if let CommandDataOptionValue::String(data) = &data_opt.value {
+                                                                    if let Some(guild_id) = command.guild_id {
+                                                                        let user_id = command.user.id;
+                                                                        match crate::commands::sql::insert::run(&ctx, guild_id, user_id, table_name, data).await {
+                                                                            Ok(embed) => {
+                                                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                                    CreateInteractionResponseMessage::new().embed(embed)
+                                                                                )).await {
+                                                                                    tracing::error!("Failed to respond after inserting data: {e}");
+                                                                                }
+                                                                            }
+                                                                            Err(embed) => {
+                                                                                if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                                    CreateInteractionResponseMessage::new().embed(embed)
+                                                                                )).await {
+                                                                                    tracing::error!("Failed to send insert error response: {e}");
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    } else {
+                                                                        if let Err(e) = command.create_response(&ctx.http, CreateInteractionResponse::Message(
+                                                                            CreateInteractionResponseMessage::new().content("This command must be used in a server (guild).")
+                                                                        )).await {
+                                                                            tracing::error!("Failed to send guild-only response: {e}");
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
                             _ => {}
                         }
                     }

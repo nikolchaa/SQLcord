@@ -81,13 +81,32 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
             **Status**: Not yet implemented"
         ),
         "insert" => (
-            "➕ INSERT (Future)",
-            "**Discord Mapping**: Will add data to table channels\n\n\
-            **Planned Process**:\n\
-            • Store data in channel messages or topic\n\
-            • Support multiple data formats\n\
-            • Validate data types and constraints\n\n\
-            **Status**: Not yet implemented"
+            "➕ INSERT INTO",
+            "**Discord Mapping**: Adds data to table channels as messages\n\n\
+            **Process**:\n\
+            • Requires active database selection (`USE <db>`)\n\
+            • Validates SQL VALUES format and data types\n\
+            • Checks data against table schema (if defined)\n\
+            • Validates required fields and constraints\n\
+            • Stores data as timestamped message in table channel\n\n\
+            **Syntax**: `/sql insert into table:<table_name> data:<values>`\n\n\
+            **Data Format**: SQL VALUES format\n\
+            **Examples**:\n\
+            • Basic: `/sql insert into:users data:1, 'John', 25`\n\
+            • With types: `/sql insert into:products data:101, 'Widget', 29.99, true`\n\
+            • With NULL: `/sql insert into:customers data:1, 'Alice', NULL, false`\n\n\
+            **Supported Value Types**:\n\
+            • Numbers: `42`, `3.14`, `-5`\n\
+            • Strings: `'John Doe'`, `'Hello World'`\n\
+            • Booleans: `true`, `false`\n\
+            • NULL: `NULL`\n\
+            • Escaped quotes: `'It''s working!'`\n\n\
+            **Validation**:\n\
+            • Type checking (INT, VARCHAR, BOOLEAN, etc.)\n\
+            • String length limits (VARCHAR size)\n\
+            • Required field validation (NOT NULL columns)\n\
+            • Value count matching schema columns\n\n\
+            **Result**: Data stored as message in `table_<name>` channel with timestamp"
         ),
         "update" => (
             "✏️ UPDATE (Future)",

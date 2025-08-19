@@ -101,9 +101,12 @@ pub fn register_sql_group() -> CreateCommand {
                 .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "table", "Table name").required(true))
         )
         .add_option(
-            CreateCommandOption::new(CommandOptionType::SubCommand, "insert", "Insert a row into a table")
-                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "table", "Table name").required(true))
-                .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "data", "Row data (json or kv)").required(true))
+            CreateCommandOption::new(CommandOptionType::SubCommandGroup, "insert", "Insert resources")
+                .set_sub_options(vec![
+                    CreateCommandOption::new(CommandOptionType::SubCommand, "into", "Insert a row into a table")
+                        .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "table", "Table name (e.g., 'users')").required(true))
+                        .add_sub_option(CreateCommandOption::new(CommandOptionType::String, "data", "Values in SQL format (e.g., '1, \"John\", true')").required(true))
+                ])
         )
         .add_option(
             CreateCommandOption::new(CommandOptionType::SubCommand, "update", "Update rows in a table")
