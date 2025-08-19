@@ -138,7 +138,7 @@ pub async fn run(operation: &str) -> Result<CreateEmbed, CreateEmbed> {
             • `INSERT` - Add data (coming soon)\n\
             • `UPDATE` - Modify data (coming soon)\n\
             • `DELETE` - Remove data (coming soon)\n\n\
-            **Tip**: Try `/sql explain create table` for specific help"
+            💡 **Tip**: Try `/sql explain create table` for specific help"
         )
     };
     

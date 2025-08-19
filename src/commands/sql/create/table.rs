@@ -97,7 +97,21 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                 // Add schema to channel topic if provided
                 if let Some(columns) = &parsed_schema {
                     let schema_description = columns.iter()
-                        .map(|col| format!("{} {}", col.name, col.data_type))
+                        .map(|col| {
+                            let mut col_def = format!("{} {}", col.name, col.data_type);
+                            
+                            // Add size if specified (e.g., VARCHAR(10))
+                            if let Some(size) = col.size {
+                                col_def = format!("{}({})", col_def, size);
+                            }
+                            
+                            // Add PRIMARY KEY constraint
+                            if col.primary_key {
+                                col_def = format!("{} PRIMARY KEY", col_def);
+                            }
+                            
+                            col_def
+                        })
                         .collect::<Vec<_>>()
                         .join(", ");
                     builder = builder.topic(&format!("Schema: {}", schema_description));

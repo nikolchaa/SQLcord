@@ -3,8 +3,40 @@
 A Discord bot for executing SQL commands in a fun and educational way. This project maps:
 
 - Databases -> Discord categories (named `db_<name>`)
-- Tables -> Channels inside the category
-- Rows -> Messages inside the table channel (future work)
+- Tables -> Channels inside the category (named `table_<name>`)
+- Rows -> Messages inside the table channel
+
+## Features ✨
+
+### Implementation Status
+
+- ✅ **Database creation** - Create and manage database categories
+- ✅ **Table creation** - Create tables with optional schema definitions
+- ✅ **Data insertion** - Insert validated data with schema support
+- ✅ **Schema validation** - Type checking and constraint validation
+- ✅ **Primary key constraints** - Uniqueness enforcement with duplicate prevention
+- ✅ **VARCHAR length limits** - String size validation and enforcement
+- ✅ **Backward compatibility** - Support for legacy schema formats
+- ✅ **SQL conventions** - Proper single quote formatting for string values
+- 🚧 **Data querying** - SELECT operations (basic implementation exists)
+- 🚧 **Data modification** - UPDATE and DELETE operations (stubs exist)
+- 🚧 **Advanced features** - Joins, indexing, transactions (future work)
+
+### Supported Data Types
+
+- `INT` - Integer values
+- `VARCHAR(size)` - Variable-length strings with size limits
+- `CHAR(size)` - Fixed-length strings with size limits
+- `BOOLEAN` - True/false values
+- `FLOAT`, `DOUBLE`, `DECIMAL` - Floating-point numbers
+- `DATE`, `TIME`, `DATETIME` - Date and time values (as strings)
+
+### Constraints
+
+- **PRIMARY KEY** - Ensures uniqueness across all rows in a table
+- **VARCHAR/CHAR length limits** - Validates string lengths against defined sizes
+- **Type validation** - Ensures data matches column types
+- **NOT NULL** (planned) - Prevents null values in specified columns
 
 ## Quick start 🚀
 
@@ -61,9 +93,11 @@ SQLcord supports defining table schemas when creating tables:
 **Schema Features:**
 
 - **Type validation** - INSERT commands validate data against the defined schema
+- **Primary key constraints** - Prevents duplicate primary key values across rows
 - **Flexible insertion** - Tables without schemas accept any data format
 - **Backward compatibility** - Automatically handles tables created with older schema formats
 - **Storage format** - Schemas are stored in Discord channel topics for persistence
+- **SQL conventions** - String values displayed with single quotes following SQL standards
 
 **Example INSERT with schema validation:**
 
@@ -77,8 +111,79 @@ Results in structured data storage:
 TIMESTAMP: 2025-08-19 00:14:00 UTC
 DATA:
   id: 1
-  name: "John Doe"
+  name: 'John Doe'
   active: true
+```
+
+### Primary Key Constraints
+
+Tables can define primary key columns that enforce uniqueness:
+
+```bash
+/sql create table users id INT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255)
+```
+
+**Primary Key Features:**
+
+- **Uniqueness enforcement** - Prevents duplicate primary key values
+- **Automatic validation** - Checks existing rows before allowing new inserts
+- **Clear error messages** - Shows which column and value caused the violation
+
+**Example of primary key violation:**
+
+```bash
+# First insert succeeds
+/sql insert users 1, 'Alice', 'alice@example.com'
+
+# Second insert with same ID fails
+/sql insert users 1, 'Bob', 'bob@example.com'
+# Error: "Duplicate primary key detected! Primary key column(s): id, Value(s): 1"
+```
+
+### Data Validation & Constraints
+
+SQLcord provides comprehensive data validation:
+
+**VARCHAR Length Validation:**
+
+```bash
+# Create table with VARCHAR size limit
+/sql create table products name VARCHAR(10), description VARCHAR(100)
+
+# This succeeds
+/sql insert products 'Widget', 'A useful tool'
+
+# This fails - name too long
+/sql insert products 'SuperLongProductName', 'Description'
+# Error: "String too long for column name (position 1). Length: 19 characters, Maximum: 10 characters"
+```
+
+**Type Validation:**
+
+```bash
+# Create table with typed columns
+/sql create table orders id INT, amount FLOAT, completed BOOLEAN
+
+# This succeeds
+/sql insert orders 100, 29.99, true
+
+# This fails - wrong type
+/sql insert orders 'not_a_number', 29.99, true
+# Error: "Type mismatch for column id (position 1). Expected: integer, Got: string"
+```
+
+**Primary Key Enforcement:**
+
+```bash
+# Create table with primary key
+/sql create table customers id INT PRIMARY KEY, name VARCHAR(50)
+
+# First insert succeeds
+/sql insert customers 1, 'John'
+
+# Duplicate primary key fails
+/sql insert customers 1, 'Jane'
+# Error: "Duplicate primary key detected! Primary key column(s): id, Value(s): 1"
 ```
 
 ### Dynamic Command Registration System
@@ -107,7 +212,7 @@ The registration system prints formatted logs like:
 2025-08-19T00:12:48.361442Z ERROR DB command registration failed.
 ```
 
-## Examples ✨
+## Examples 🎭
 
 ### Basic Database Operations
 

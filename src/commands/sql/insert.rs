@@ -1,7 +1,7 @@
 // /sql insert into <table> <data>
 
 use std::error::Error;
-use serenity::prelude::Context;
+use serenity::prelude::*;
 use serenity::model::id::{GuildId, UserId};
 use serenity::model::channel::ChannelType;
 use serenity::builder::CreateMessage;
@@ -93,6 +93,11 @@ pub async fn run(ctx: &Context, guild_id: GuildId, user_id: UserId, table_name: 
                             "✖️ Data Validation Failed",
                             &format!("**Validation Error:**\n{}\n\n💡 **Schema:** {}", validation_error, format_schema_info(&schema))
                         ));
+                    }
+                    
+                    // Check for primary key duplicates
+                    if let Err(duplicate_error) = check_primary_key_duplicates(ctx, channel, &parsed_values, &schema).await {
+                        return Err(duplicate_error);
                     }
                     
                     // Format data for storage
@@ -199,7 +204,7 @@ fn format_sql_values_for_display(values: &[SqlValue], schema: &[ColumnDefinition
 /// Format a single SQL value for display
 fn format_sql_value_for_display(value: &SqlValue) -> String {
     match value {
-        SqlValue::String(s) => format!("\"{}\"", s),
+        SqlValue::String(s) => format!("'{}'", s),
         SqlValue::Integer(n) => n.to_string(),
         SqlValue::Float(f) => f.to_string(),
         SqlValue::Boolean(b) => b.to_string(),
@@ -257,6 +262,172 @@ fn format_schema_info(schema: &[ColumnDefinition]) -> String {
             })
             .collect();
         column_info.join(", ")
+    }
+}
+
+/// Check for primary key duplicates in existing messages
+async fn check_primary_key_duplicates(
+    ctx: &Context,
+    channel: &serenity::model::channel::GuildChannel,
+    new_values: &[SqlValue],
+    schema: &[ColumnDefinition],
+) -> Result<(), serenity::builder::CreateEmbed> {
+    // Find primary key column(s)
+    let primary_key_columns: Vec<(usize, &ColumnDefinition)> = schema
+        .iter()
+        .enumerate()
+        .filter(|(_, col)| col.primary_key)
+        .collect();
+    
+    // If no primary key defined, no need to check
+    if primary_key_columns.is_empty() {
+        return Ok(());
+    }
+    
+    // Get primary key values from new data
+    let mut new_pk_values = Vec::new();
+    for (index, _column) in &primary_key_columns {
+        if let Some(value) = new_values.get(*index) {
+            new_pk_values.push(value);
+        } else {
+            return Err(create_error_embed(
+                "✖️ Primary Key Missing",
+                "Primary key value is required but not provided in the data."
+            ));
+        }
+    }
+    
+    // Fetch existing messages from the channel
+    let messages = match channel.messages(&ctx.http, serenity::builder::GetMessages::new().limit(100)).await {
+        Ok(messages) => messages,
+        Err(_) => {
+            // If we can't read messages, allow the insert (fail-open for permissions issues)
+            return Ok(());
+        }
+    };
+    
+    // Check each existing message for primary key conflicts
+    for message in messages {
+        if let Some(existing_values) = extract_values_from_message(&message.content, schema) {
+            // Check if primary key values match
+            let mut matches = true;
+            for (i, (index, _column)) in primary_key_columns.iter().enumerate() {
+                if let (Some(new_val), Some(existing_val)) = (new_pk_values.get(i), existing_values.get(*index)) {
+                    if !sql_values_equal(new_val, existing_val) {
+                        matches = false;
+                        break;
+                    }
+                }
+            }
+            
+            if matches {
+                let pk_column_names: Vec<String> = primary_key_columns
+                    .iter()
+                    .map(|(_, col)| col.name.clone())
+                    .collect();
+                
+                return Err(create_error_embed(
+                    "✖️ Primary Key Violation",
+                    &format!(
+                        "**Duplicate primary key detected!**\n\nPrimary key column(s): **{}**\nValue(s): **{}**\n\n💡 **Tip:** Primary key values must be unique across all rows.",
+                        pk_column_names.join(", "),
+                        new_pk_values.iter().map(|v| format_sql_value_for_display(v)).collect::<Vec<_>>().join(", ")
+                    )
+                ));
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+/// Extract values from a stored message in schema order
+fn extract_values_from_message(content: &str, schema: &[ColumnDefinition]) -> Option<Vec<SqlValue>> {
+    // Look for "DATA:" section
+    if let Some(data_start) = content.find("DATA:\n") {
+        let data_section = &content[data_start + 6..];
+        let mut value_map = std::collections::HashMap::new();
+        
+        // Parse all column: value pairs
+        for line in data_section.lines() {
+            // Check if line is indented (starts with spaces) and contains ": "
+            if line.starts_with("  ") && line.contains(": ") {
+                if let Some(colon_pos) = line.find(": ") {
+                    let column_name = line[2..colon_pos].trim();
+                    let value_str = line[colon_pos + 2..].trim();
+                    
+                    // Parse the value string back to SqlValue
+                    if let Ok(sql_value) = parse_stored_value(value_str) {
+                        value_map.insert(column_name.to_string(), sql_value);
+                    }
+                }
+            }
+        }
+        
+        // Reconstruct values in schema order
+        let mut ordered_values = Vec::new();
+        for column in schema {
+            if let Some(value) = value_map.get(&column.name) {
+                ordered_values.push(value.clone());
+            } else {
+                // Missing column - can't reconstruct properly
+                return None;
+            }
+        }
+        
+        if ordered_values.len() == schema.len() {
+            return Some(ordered_values);
+        }
+    }
+    None
+}
+
+/// Parse a stored value string back to SqlValue
+fn parse_stored_value(value_str: &str) -> Result<SqlValue, String> {
+    let trimmed = value_str.trim();
+    
+    // Check for NULL
+    if trimmed.eq_ignore_ascii_case("null") {
+        return Ok(SqlValue::Null);
+    }
+    
+    // Check for boolean
+    if trimmed.eq_ignore_ascii_case("true") {
+        return Ok(SqlValue::Boolean(true));
+    }
+    if trimmed.eq_ignore_ascii_case("false") {
+        return Ok(SqlValue::Boolean(false));
+    }
+    
+    // Check for string (single or double quotes)
+    if (trimmed.starts_with('\'') && trimmed.ends_with('\'')) || 
+       (trimmed.starts_with('"') && trimmed.ends_with('"')) {
+        let content = &trimmed[1..trimmed.len()-1];
+        return Ok(SqlValue::String(content.to_string()));
+    }
+    
+    // Check for integer
+    if let Ok(int_val) = trimmed.parse::<i64>() {
+        return Ok(SqlValue::Integer(int_val));
+    }
+    
+    // Check for float
+    if let Ok(float_val) = trimmed.parse::<f64>() {
+        return Ok(SqlValue::Float(float_val));
+    }
+    
+    Err(format!("Cannot parse stored value: {}", value_str))
+}
+
+/// Compare two SQL values for equality
+fn sql_values_equal(a: &SqlValue, b: &SqlValue) -> bool {
+    match (a, b) {
+        (SqlValue::Integer(a), SqlValue::Integer(b)) => a == b,
+        (SqlValue::Float(a), SqlValue::Float(b)) => (a - b).abs() < f64::EPSILON,
+        (SqlValue::String(a), SqlValue::String(b)) => a == b,
+        (SqlValue::Boolean(a), SqlValue::Boolean(b)) => a == b,
+        (SqlValue::Null, SqlValue::Null) => true,
+        _ => false,
     }
 }
 

@@ -263,7 +263,7 @@ pub fn parse_sql_values(values_str: &str) -> Result<Vec<SqlValue>, String> {
     
     // Handle last value
     if in_string {
-        return Err("❌ **Unterminated string** - Missing closing quote\n\n💡 **Example:** `'John'` instead of `'John`".to_string());
+        return Err("❌ **Unterminated string** - Missing closing quote\n\n**Example:** `'John'` instead of `'John`".to_string());
     }
     
     let trimmed = current_value.trim();
@@ -272,7 +272,7 @@ pub fn parse_sql_values(values_str: &str) -> Result<Vec<SqlValue>, String> {
     }
     
     if values.is_empty() {
-        return Err("❌ **No values provided**\n\n💡 **Examples:**\n• `1, 'John', true`\n• `42, 'Alice', false, NULL`".to_string());
+        return Err("❌ **No values provided**\n\n**Examples:**\n• `1, 'John', true`\n• `42, 'Alice', false, NULL`".to_string());
     }
     
     Ok(values)
@@ -310,7 +310,7 @@ fn parse_single_value(value_str: &str) -> Result<SqlValue, String> {
     
     // If all else fails, it's an invalid unquoted value
     Err(format!(
-        "❌ **Invalid value:** `{}`\n\n💡 **Valid formats:**\n• Numbers: `42`, `3.14`\n• Booleans: `true`, `false`\n• Strings: `'text'`\n• NULL: `NULL`",
+        "❌ **Invalid value:** `{}`\n\n**Valid formats:**\n• Numbers: `42`, `3.14`\n• Booleans: `true`, `false`\n• Strings: `'text'`\n• NULL: `NULL`",
         trimmed
     ))
 }
@@ -323,7 +323,7 @@ pub fn validate_values_against_schema(values: &[SqlValue], schema: &[ColumnDefin
     
     if values.len() != schema.len() {
         return Err(format!(
-            "❌ **Value count mismatch:** Expected {} values for columns, got {}\n\n📋 **Expected columns:** {}\n\n💡 **Example:** {}",
+            "❌ **Value count mismatch:** Expected {} values for columns, got {}\n\n📋 **Expected columns:** {}\n\n**Example:** {}",
             schema.len(),
             values.len(),
             schema.iter().map(|c| c.name.as_str()).collect::<Vec<_>>().join(", "),
@@ -346,7 +346,7 @@ fn validate_sql_value_type(value: &SqlValue, column: &ColumnDefinition, position
     if matches!(value, SqlValue::Null) {
         if !column.nullable {
             return Err(format!(
-                "❌ **NULL not allowed** for column **{}** (position {})\n\n📋 **Column:** {} {}\n💡 **Required:** This column cannot be NULL",
+                "❌ **NULL not allowed** for column **{}** (position {})\n\n📋 **Column:** {} {}\n**Required:** This column cannot be NULL",
                 column.name,
                 position,
                 column.name,
@@ -361,7 +361,7 @@ fn validate_sql_value_type(value: &SqlValue, column: &ColumnDefinition, position
         "INT" => {
             if !matches!(value, SqlValue::Integer(_)) {
                 return Err(format!(
-                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **integer**\nGot: **{}**\n\n💡 **Example:** `42` instead of `{}`",
+                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **integer**\nGot: **{}**\n\n**Example:** `42` instead of `{}`",
                     column.name,
                     position,
                     get_sql_value_type_name(value),
@@ -385,7 +385,7 @@ fn validate_sql_value_type(value: &SqlValue, column: &ColumnDefinition, position
                 }
             } else {
                 return Err(format!(
-                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **string**\nGot: **{}**\n\n💡 **Example:** `'John'` instead of `{}`",
+                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **string**\nGot: **{}**\n\n**Example:** `'John'` instead of `{}`",
                     column.name,
                     position,
                     get_sql_value_type_name(value),
@@ -396,7 +396,7 @@ fn validate_sql_value_type(value: &SqlValue, column: &ColumnDefinition, position
         "BOOLEAN" => {
             if !matches!(value, SqlValue::Boolean(_)) {
                 return Err(format!(
-                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **boolean**\nGot: **{}**\n\n💡 **Example:** `true` or `false` instead of `{}`",
+                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **boolean**\nGot: **{}**\n\n**Example:** `true` or `false` instead of `{}`",
                     column.name,
                     position,
                     get_sql_value_type_name(value),
@@ -407,7 +407,7 @@ fn validate_sql_value_type(value: &SqlValue, column: &ColumnDefinition, position
         "FLOAT" | "DOUBLE" | "DECIMAL" => {
             if !matches!(value, SqlValue::Float(_) | SqlValue::Integer(_)) {
                 return Err(format!(
-                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **number**\nGot: **{}**\n\n💡 **Examples:** `3.14` or `42` instead of `{}`",
+                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **number**\nGot: **{}**\n\n**Examples:** `3.14` or `42` instead of `{}`",
                     column.name,
                     position,
                     get_sql_value_type_name(value),
@@ -418,7 +418,7 @@ fn validate_sql_value_type(value: &SqlValue, column: &ColumnDefinition, position
         "DATE" | "TIME" | "DATETIME" => {
             if !matches!(value, SqlValue::String(_)) {
                 return Err(format!(
-                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **string** (ISO date format)\nGot: **{}**\n\n💡 **Examples:**\n• DATE: `'2023-12-25'`\n• TIME: `'14:30:00'`\n• DATETIME: `'2023-12-25T14:30:00Z'`",
+                    "❌ **Type mismatch** for column **{}** (position {})\n\nExpected: **string** (ISO date format)\nGot: **{}**\n\n**Examples:**\n• DATE: `'2023-12-25'`\n• TIME: `'14:30:00'`\n• DATETIME: `'2023-12-25T14:30:00Z'`",
                     column.name,
                     position,
                     get_sql_value_type_name(value)
